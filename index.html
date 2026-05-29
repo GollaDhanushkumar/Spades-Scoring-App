@@ -1,0 +1,2910 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="theme-color" content="#0a1410" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<meta name="mobile-web-app-capable" content="yes" />
+<link rel="manifest" href="manifest.json" />
+<link rel="icon" href="favicon.svg" type="image/svg+xml" />
+<link rel="apple-touch-icon" href="icons/icon-192.png" />
+<title>Spades Scoring App</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,400;1,9..144,500&family=Geist:wght@300;400;500;600;700&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<style>
+:root{
+  --ink:          #07100c;
+  --bg:           #0a1410;
+  --panel:        #0f1d18;
+  --panel-2:      #14271f;
+  --elevated:     #1a3127;
+  --line:         #1f3a2e;
+  --line-strong:  #2d5443;
+  --felt:         #0f3d2c;
+  --felt-deep:    #0a2b1f;
+  --gold:         #d4b675;
+  --gold-bright:  #f0d59c;
+  --gold-deep:    #a3854f;
+  --cream:        #f0e6cf;
+  --muted:        #7e9a8e;
+  --dim:          #4d685e;
+  --red:          #d65656;
+  --red-deep:     #963838;
+  --win:          #79c79a;
+  --loss:         #d65656;
+  --shadow:       0 12px 40px -12px rgba(0,0,0,0.6), 0 2px 4px rgba(0,0,0,0.3);
+  --inner-light:  inset 0 1px 0 rgba(255,255,255,0.04);
+}
+
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%}
+html{font-size:16px}
+body{
+  font-family:"Geist", system-ui, -apple-system, sans-serif;
+  background: var(--bg);
+  color: var(--cream);
+  font-weight:400;
+  letter-spacing:-0.005em;
+  overscroll-behavior:none;
+  -webkit-font-smoothing:antialiased;
+  background-image:
+    radial-gradient(ellipse 80% 50% at 50% -10%, rgba(15,61,44,0.35), transparent 60%),
+    radial-gradient(ellipse 60% 40% at 100% 100%, rgba(212,182,117,0.05), transparent 60%),
+    radial-gradient(ellipse 60% 40% at 0% 80%, rgba(15,61,44,0.2), transparent 60%);
+  background-attachment:fixed;
+  min-height:100vh;
+}
+body::before{
+  content:"";
+  position:fixed;inset:0;
+  pointer-events:none;
+  background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/><feColorMatrix values='0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 0.04 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+  opacity:0.5;
+  mix-blend-mode:overlay;
+  z-index:9999;
+}
+
+.app{
+  max-width:540px;
+  margin:0 auto;
+  min-height:100vh;
+  min-height:100dvh;
+  padding: env(safe-area-inset-top) 0 env(safe-area-inset-bottom);
+  display:flex;flex-direction:column;
+  position:relative;
+}
+
+/* ── Header ─────────────────────────────────────────────── */
+.topbar{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:18px 22px 12px;
+  position:sticky;top:0;z-index:50;
+  background:linear-gradient(to bottom, var(--bg) 60%, transparent);
+  backdrop-filter: blur(8px);
+}
+.brand{display:flex;align-items:center;gap:10px;font-family:"Fraunces",serif;font-style:italic;font-weight:500;font-size:1.05rem;letter-spacing:0.01em;color:var(--gold-bright)}
+.brand .suits{font-family:"Geist",sans-serif;font-style:normal;letter-spacing:-2px;font-size:0.95rem}
+.brand .suits .b{color:var(--cream)}
+.brand .suits .r{color:var(--red)}
+.iconbtn{
+  width:38px;height:38px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  background:rgba(255,255,255,0.04);
+  border:1px solid var(--line);
+  color:var(--cream);
+  cursor:pointer;transition:all .15s;
+}
+.iconbtn:hover{background:rgba(255,255,255,0.08);border-color:var(--line-strong)}
+.iconbtn svg{width:18px;height:18px;stroke-width:1.6}
+
+/* ── Layout ─────────────────────────────────────────────── */
+.view{flex:1;padding:8px 22px 32px;animation: fadeUp .4s ease both}
+@keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+.view-narrow{max-width:480px;margin:0 auto}
+
+h1.display{
+  font-family:"Fraunces",serif;
+  font-weight:400;
+  font-size:clamp(2.4rem, 9vw, 3.2rem);
+  line-height:1;
+  letter-spacing:-0.025em;
+  color:var(--cream);
+}
+h1.display em{font-style:italic;color:var(--gold-bright);font-weight:300}
+h2.section{
+  font-family:"Fraunces",serif;
+  font-weight:400;
+  font-size:1.6rem;
+  letter-spacing:-0.015em;
+  color:var(--cream);
+}
+h3.label{
+  font-size:0.7rem;
+  text-transform:uppercase;
+  letter-spacing:0.18em;
+  color:var(--muted);
+  font-weight:500;
+}
+.subtle{color:var(--muted);font-size:0.92rem;line-height:1.5}
+
+/* ── Cards / Panels ──────────────────────────────────────── */
+.panel{
+  background:linear-gradient(180deg, var(--panel) 0%, var(--panel-2) 100%);
+  border:1px solid var(--line);
+  border-radius:18px;
+  padding:18px;
+  box-shadow:var(--shadow), var(--inner-light);
+}
+.panel.felt{
+  background:
+    radial-gradient(ellipse at top, rgba(212,182,117,0.06), transparent 70%),
+    linear-gradient(180deg, var(--felt) 0%, var(--felt-deep) 100%);
+  border-color: rgba(212,182,117,0.18);
+}
+.panel-tight{padding:14px}
+
+/* ── Buttons ─────────────────────────────────────────────── */
+.btn{
+  display:inline-flex;align-items:center;justify-content:center;gap:8px;
+  padding:14px 20px;
+  border-radius:12px;
+  border:1px solid var(--line);
+  background:var(--elevated);
+  color:var(--cream);
+  font-family:inherit;
+  font-size:0.95rem;
+  font-weight:500;
+  letter-spacing:0.01em;
+  cursor:pointer;
+  transition:transform .12s, background .15s, border-color .15s;
+  width:100%;
+  text-align:center;
+}
+.btn:hover{background:#21392f;border-color:var(--line-strong)}
+.btn:active{transform:scale(0.985)}
+.btn[disabled]{opacity:0.4;cursor:not-allowed}
+.btn-primary{
+  background:linear-gradient(180deg, var(--gold-bright), var(--gold));
+  color:var(--ink);
+  border-color: var(--gold-deep);
+  font-weight:600;
+  box-shadow: 0 1px 0 rgba(255,255,255,0.4) inset, 0 6px 22px -8px rgba(212,182,117,0.5);
+}
+.btn-primary:hover{background:linear-gradient(180deg, #fae3b3, #dec38c)}
+.btn-ghost{background:transparent;border-color:var(--line)}
+.btn-ghost:hover{background:rgba(255,255,255,0.03)}
+.btn-danger{background:transparent;border-color:rgba(214,86,86,0.3);color:var(--red)}
+.btn-danger:hover{background:rgba(214,86,86,0.08)}
+.btn-row{display:flex;gap:10px}
+.btn-row .btn{flex:1}
+
+.chip{
+  display:inline-flex;align-items:center;justify-content:center;
+  padding:10px 14px;border-radius:10px;
+  background:var(--elevated);
+  border:1px solid var(--line);
+  color:var(--cream);
+  font-size:0.92rem;
+  font-weight:500;
+  cursor:pointer;transition:all .15s;
+  user-select:none;
+}
+.chip:hover{border-color:var(--line-strong);background:#21392f}
+.chip.active{
+  background:linear-gradient(180deg, rgba(212,182,117,0.18), rgba(212,182,117,0.08));
+  border-color:var(--gold);
+  color:var(--gold-bright);
+  box-shadow: inset 0 1px 0 rgba(240,213,156,0.2);
+}
+.chip.disabled{opacity:0.35;cursor:not-allowed;pointer-events:none}
+.chip-grid{display:grid;grid-template-columns:repeat(4, 1fr);gap:8px}
+
+/* ── Inputs ──────────────────────────────────────────────── */
+.input{
+  width:100%;
+  padding:14px 16px;
+  background:var(--panel);
+  border:1px solid var(--line);
+  border-radius:12px;
+  color:var(--cream);
+  font-family:inherit;
+  font-size:1rem;
+  transition:border-color .15s, background .15s;
+}
+.input:focus{outline:none;border-color:var(--gold);background:var(--panel-2)}
+.input::placeholder{color:var(--dim)}
+
+.field{display:flex;flex-direction:column;gap:8px}
+.field-row{display:flex;gap:10px;align-items:center}
+
+/* ── Stepper ─────────────────────────────────────────────── */
+.stepper{
+  display:flex;align-items:stretch;
+  background:var(--panel);
+  border:1px solid var(--line);
+  border-radius:12px;
+  overflow:hidden;
+}
+.stepper button{
+  width:44px;
+  border:none;background:transparent;color:var(--cream);
+  font-size:1.4rem;font-weight:300;cursor:pointer;
+  transition:background .15s;
+}
+.stepper button:hover{background:rgba(255,255,255,0.05)}
+.stepper button:active{background:rgba(212,182,117,0.1)}
+.stepper button:disabled{opacity:0.3;cursor:not-allowed}
+.stepper .val{
+  flex:1;display:flex;align-items:center;justify-content:center;
+  font-family:"Fraunces",serif;font-size:1.4rem;color:var(--gold-bright);
+  min-width:50px;
+  border-left:1px solid var(--line);
+  border-right:1px solid var(--line);
+}
+
+/* ── Suit colors ─────────────────────────────────────────── */
+.suit{font-family:"Geist",sans-serif}
+.suit.spade,.suit.club{color:var(--cream)}
+.suit.heart,.suit.diamond{color:var(--red)}
+
+/* ── Playing card ────────────────────────────────────────── */
+.pcard{
+  width:54px;height:74px;
+  background:linear-gradient(180deg, #f7f1de, #ece2c3);
+  color:#1a1a1a;
+  border-radius:8px;
+  display:flex;flex-direction:column;justify-content:space-between;
+  padding:6px 7px;
+  font-family:"Fraunces",serif;font-weight:500;
+  box-shadow: 0 2px 0 rgba(0,0,0,0.3), 0 8px 18px -4px rgba(0,0,0,0.5);
+  position:relative;
+  flex-shrink:0;
+}
+.pcard.red{color:#963838}
+.pcard .tl{font-size:1rem;line-height:1;display:flex;align-items:center;gap:2px;flex-direction:column}
+.pcard .tl .v{font-weight:600}
+.pcard .br{font-size:1rem;line-height:1;align-self:flex-end;transform:rotate(180deg);display:flex;align-items:center;gap:2px;flex-direction:column}
+.pcard .br .v{font-weight:600}
+.pcard .center{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:1.6rem}
+.pcard.small{width:36px;height:50px;padding:4px 5px}
+.pcard.small .tl,.pcard.small .br{font-size:0.7rem}
+.pcard.small .center{font-size:1rem}
+.pcard.tiny{width:26px;height:36px;padding:3px 3px;border-radius:5px}
+.pcard.tiny .tl,.pcard.tiny .br{font-size:0.6rem}
+.pcard.tiny .center{display:none}
+.pcard.empty{
+  background:transparent;
+  border:1.5px dashed var(--line-strong);
+  color:var(--dim);
+  box-shadow:none;
+  display:flex;align-items:center;justify-content:center;
+  font-size:1.6rem;font-family:"Geist",sans-serif;font-weight:300;
+}
+
+/* ── Draw row (player picking a card) ───────────────────── */
+.draw-row{
+  display:flex;align-items:center;gap:12px;
+  padding:12px 14px;
+  background:var(--panel);
+  border:1px solid var(--line);
+  border-radius:14px;
+  margin-bottom:8px;
+  transition:border-color .15s, background .15s;
+  position:relative;
+}
+.draw-row.tied{
+  border-color: rgba(214,86,86,0.4);
+  background:linear-gradient(180deg, rgba(214,86,86,0.04), var(--panel));
+}
+.draw-row.settled{opacity:0.85}
+.draw-row .nm{flex:1;font-weight:500;font-size:1rem;min-width:0}
+.draw-row .nm .sub{font-size:0.72rem;color:var(--muted);font-family:"Geist Mono",monospace;letter-spacing:0.05em;display:block;margin-top:2px}
+.draw-row .nm .sub.tied-sub{color:var(--red)}
+.draw-row .nm .sub.settled-sub{color:var(--win)}
+.draw-row .cards-strip{display:flex;align-items:center;gap:4px}
+.draw-row .cards-strip .arrow{color:var(--dim);font-size:0.78rem}
+.pickbtn{
+  padding:8px 12px;border-radius:10px;
+  background:rgba(212,182,117,0.1);
+  border:1px solid rgba(212,182,117,0.3);
+  color:var(--gold-bright);
+  font-size:0.82rem;font-weight:500;
+  cursor:pointer;transition:all .15s;
+  display:inline-flex;align-items:center;gap:6px;
+  font-family:inherit;
+}
+.pickbtn:hover{background:rgba(212,182,117,0.16);border-color:var(--gold)}
+.pickbtn.tiebreak{background:rgba(214,86,86,0.1);border-color:rgba(214,86,86,0.4);color:var(--red)}
+.pickbtn.tiebreak:hover{background:rgba(214,86,86,0.18)}
+
+/* ── Tie banner ─────────────────────────────────────────── */
+.tie-banner{
+  background:linear-gradient(180deg, rgba(214,86,86,0.1), rgba(214,86,86,0.04));
+  border:1px solid rgba(214,86,86,0.3);
+  border-radius:14px;
+  padding:14px 16px;
+  display:flex;gap:12px;align-items:flex-start;
+}
+.tie-banner .icon{
+  width:32px;height:32px;border-radius:50%;
+  background:rgba(214,86,86,0.15);
+  display:flex;align-items:center;justify-content:center;
+  color:var(--red);font-size:1.2rem;font-family:"Fraunces",serif;font-weight:600;
+  flex-shrink:0;
+}
+.tie-banner .body{font-size:0.88rem;line-height:1.5;color:var(--cream)}
+.tie-banner .body strong{color:var(--red);font-weight:500}
+
+/* ── Player row in bid/tricks ────────────────────────────── */
+.prow{
+  display:grid;
+  grid-template-columns: 1fr auto;
+  align-items:center;gap:14px;
+  padding:12px 14px;
+  background:var(--panel);
+  border:1px solid var(--line);
+  border-radius:14px;
+  margin-bottom:8px;
+  transition:border-color .15s;
+}
+.prow.team-0{border-left:3px solid var(--gold)}
+.prow.team-1{border-left:3px solid #7ab8d4}
+.prow.team-2{border-left:3px solid #c47ab8}
+.prow.team-3{border-left:3px solid #b8c47a}
+.prow .info{display:flex;flex-direction:column;gap:2px;min-width:0}
+.prow .info .nm{font-weight:500;font-size:1rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.prow .info .sub{font-size:0.78rem;color:var(--muted)}
+
+/* ── Score chip in scoreboard ────────────────────────────── */
+.score-pos{
+  font-family:"Fraunces",serif;
+  font-style:italic;
+  color:var(--gold-bright);
+  font-size:1.1rem;
+}
+.score-val{
+  font-family:"Fraunces",serif;
+  font-size:1.4rem;
+  font-weight:500;
+  font-variant-numeric:tabular-nums;
+}
+.score-val.pos{color:var(--win)}
+.score-val.neg{color:var(--loss)}
+
+/* ── Tabs / segmented ───────────────────────────────────── */
+.seg{
+  display:flex;
+  background:var(--panel);
+  border:1px solid var(--line);
+  border-radius:12px;
+  padding:4px;
+  gap:4px;
+}
+.seg button{
+  flex:1;
+  padding:10px 12px;
+  border:none;background:transparent;color:var(--muted);
+  border-radius:9px;
+  font-family:inherit;font-size:0.9rem;font-weight:500;
+  cursor:pointer;transition:all .15s;
+}
+.seg button.active{
+  background:var(--elevated);
+  color:var(--cream);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,0.06);
+}
+.seg button:disabled{opacity:0.35;cursor:not-allowed}
+
+/* ── Misc helpers ────────────────────────────────────────── */
+.divider{height:1px;background:var(--line);margin:18px 0}
+.gold{color:var(--gold-bright)}
+.row{display:flex;align-items:center;gap:10px}
+.between{justify-content:space-between}
+.stack-sm > * + *{margin-top:8px}
+.stack > * + *{margin-top:14px}
+.stack-lg > * + *{margin-top:22px}
+.center-text{text-align:center}
+.mono{font-family:"Geist Mono",monospace;font-variant-numeric:tabular-nums}
+
+.dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--gold)}
+
+/* Round chip badge */
+.round-badge{
+  display:inline-flex;align-items:center;gap:8px;
+  padding:6px 12px;
+  border:1px solid var(--line);
+  background:rgba(15,61,44,0.4);
+  border-radius:99px;
+  font-size:0.78rem;
+  color:var(--muted);
+  font-family:"Geist Mono",monospace;
+  letter-spacing:0.05em;
+}
+.round-badge .num{color:var(--gold-bright);font-family:"Fraunces",serif;font-style:italic;font-size:0.95rem}
+
+/* ── Circular table ─────────────────────────────────────── */
+.table-stage{
+  position:relative;
+  width:min(340px, 100%);
+  aspect-ratio:1;
+  margin:0 auto;
+}
+.table-stage svg{
+  width:100%;height:100%;display:block;
+  filter: drop-shadow(0 12px 24px rgba(0,0,0,0.4));
+}
+.seat-mark{
+  position:absolute;
+  transform:translate(-50%, -50%);
+  display:flex;flex-direction:column;align-items:center;gap:5px;
+  width:78px;
+  animation:seatPop .4s ease both;
+  z-index:2;
+}
+@keyframes seatPop{
+  from{opacity:0;transform:translate(-50%,-50%) scale(0.7)}
+  to{opacity:1;transform:translate(-50%,-50%) scale(1)}
+}
+.seat-mark .seat-num-badge{
+  position:absolute;
+  top:-8px;left:-8px;
+  width:22px;height:22px;
+  border-radius:50%;
+  background:var(--ink);
+  border:1px solid var(--gold);
+  color:var(--gold-bright);
+  font-family:"Fraunces",serif;font-style:italic;font-size:0.78rem;
+  display:flex;align-items:center;justify-content:center;
+  z-index:3;
+}
+.seat-mark .seat-name-pill{
+  background: rgba(7,16,12, 0.92);
+  border:1px solid var(--line-strong);
+  padding:4px 10px;
+  border-radius:8px;
+  font-size:0.78rem;
+  font-weight:500;
+  color:var(--cream);
+  white-space:nowrap;
+  max-width:100px;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  text-align:center;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+}
+.seat-mark.team-0 .seat-name-pill{border-color:var(--gold)}
+.seat-mark.team-1 .seat-name-pill{border-color:#7ab8d4}
+.seat-mark.team-2 .seat-name-pill{border-color:#c47ab8}
+.seat-mark.team-3 .seat-name-pill{border-color:#b8c47a}
+.seat-mark .dealer-pill{
+  background: linear-gradient(180deg, var(--gold-bright), var(--gold));
+  color: var(--ink);
+  font-size:0.6rem;letter-spacing:0.12em;
+  padding:2px 6px;border-radius:4px;
+  font-family:"Geist",sans-serif;font-weight:600;
+  margin-top:2px;
+}
+
+/* Team roster cards */
+.team-card{
+  padding:12px 14px;
+  background:var(--panel);
+  border:1px solid var(--line);
+  border-radius:12px;
+  display:flex;align-items:center;gap:12px;
+}
+.team-card.team-0{border-left:3px solid var(--gold)}
+.team-card.team-1{border-left:3px solid #7ab8d4}
+.team-card.team-2{border-left:3px solid #c47ab8}
+.team-card.team-3{border-left:3px solid #b8c47a}
+.team-card .tdot{
+  width:10px;height:10px;border-radius:50%;
+}
+.team-card.team-0 .tdot{background:var(--gold)}
+.team-card.team-1 .tdot{background:#7ab8d4}
+.team-card.team-2 .tdot{background:#c47ab8}
+.team-card.team-3 .tdot{background:#b8c47a}
+.team-card .members{flex:1;font-weight:500;font-size:0.95rem}
+
+/* History table */
+.htbl{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums}
+.htbl th, .htbl td{
+  padding:8px 6px;
+  text-align:center;
+  font-size:0.85rem;
+  border-bottom:1px solid var(--line);
+}
+.htbl th{
+  font-size:0.68rem;
+  text-transform:uppercase;
+  letter-spacing:0.12em;
+  color:var(--muted);
+  font-weight:500;
+}
+.htbl td.nm{text-align:left;font-weight:500;color:var(--cream)}
+.htbl td.score{color:var(--gold-bright);font-family:"Fraunces",serif;font-size:1rem}
+.htbl tr.win td{background:rgba(212,182,117,0.06)}
+
+/* Modal */
+.modal-bg{
+  position:fixed;inset:0;background:rgba(0,0,0,0.7);
+  z-index:200;display:flex;align-items:center;justify-content:center;
+  padding:20px;
+  animation:fade .2s ease;
+}
+.modal{
+  max-width:420px;width:100%;
+  max-height:90vh;
+  overflow-y:auto;
+  background:var(--panel);
+  border:1px solid var(--line);
+  border-radius:18px;
+  padding:24px;
+  box-shadow:var(--shadow);
+}
+@keyframes fade{from{opacity:0}to{opacity:1}}
+
+/* Toast */
+.toast{
+  position:fixed;left:50%;bottom:30px;transform:translateX(-50%);
+  background:var(--elevated);
+  border:1px solid var(--line-strong);
+  color:var(--cream);
+  padding:12px 18px;
+  border-radius:12px;
+  font-size:0.9rem;
+  box-shadow:var(--shadow);
+  z-index:300;
+  animation:toastIn .25s ease;
+}
+@keyframes toastIn{from{opacity:0;transform:translate(-50%,8px)}to{opacity:1;transform:translate(-50%,0)}}
+
+/* Trump badge */
+.trump-line{
+  display:flex;align-items:center;gap:10px;
+  font-size:0.85rem;color:var(--muted);
+}
+.trump-line .spade-icon{
+  color:var(--cream);font-size:1.1rem;
+}
+
+/* Crown for leader */
+.crown{
+  display:inline-block;
+  color:var(--gold-bright);
+  margin-right:6px;
+  font-size:0.85rem;
+}
+
+/* Stepper compact */
+.stepper-sm button{width:36px;font-size:1.2rem}
+.stepper-sm .val{font-size:1.1rem;min-width:38px}
+
+/* Card picker */
+.card-picker{
+  display:grid;
+  grid-template-columns:repeat(7, 1fr);
+  gap:6px;
+  margin-top:10px;
+}
+.card-picker button{
+  padding:8px 0;
+  border:1px solid var(--line);
+  background:var(--panel);
+  color:var(--cream);
+  border-radius:8px;
+  font-family:"Fraunces",serif;font-size:0.95rem;
+  cursor:pointer;transition:all .12s;
+}
+.card-picker button:hover{border-color:var(--line-strong)}
+.card-picker button.active{
+  background:rgba(212,182,117,0.15);
+  border-color:var(--gold);
+  color:var(--gold-bright);
+}
+.suit-picker{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:8px}
+.suit-picker button{padding:10px 0;border:1px solid var(--line);background:var(--panel);border-radius:8px;font-size:1.3rem;cursor:pointer;transition:all .12s}
+.suit-picker button.active{background:rgba(212,182,117,0.1);border-color:var(--gold)}
+.suit-picker button.spade,.suit-picker button.club{color:var(--cream)}
+.suit-picker button.heart,.suit-picker button.diamond{color:var(--red)}
+
+/* Empty state */
+.empty{
+  padding:40px 20px;
+  text-align:center;
+  color:var(--muted);
+}
+
+/* Compact list */
+.list-item{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:14px 16px;
+  background:var(--panel);
+  border:1px solid var(--line);
+  border-radius:12px;
+  margin-bottom:8px;
+  cursor:pointer;transition:border-color .15s;
+}
+.list-item:hover{border-color:var(--line-strong)}
+.list-item .li-info{display:flex;flex-direction:column;gap:2px}
+.list-item .li-title{font-weight:500}
+.list-item .li-sub{font-size:0.78rem;color:var(--muted)}
+
+/* Big score display */
+.bigscore{
+  font-family:"Fraunces",serif;
+  font-size:3.5rem;
+  font-weight:300;
+  line-height:1;
+  font-variant-numeric:tabular-nums;
+  color:var(--gold-bright);
+}
+.bigscore.neg{color:var(--red)}
+
+.scroll-x{overflow-x:auto;-webkit-overflow-scrolling:touch}
+.scroll-x::-webkit-scrollbar{height:6px}
+.scroll-x::-webkit-scrollbar-thumb{background:var(--line-strong);border-radius:3px}
+
+/* Phase indicator */
+.phase-pill{
+  display:inline-flex;align-items:center;gap:6px;
+  padding:4px 10px;border-radius:99px;
+  font-size:0.72rem;letter-spacing:0.15em;text-transform:uppercase;
+  font-weight:500;
+}
+.phase-pill.bid{background:rgba(212,182,117,0.12);color:var(--gold-bright);border:1px solid rgba(212,182,117,0.3)}
+.phase-pill.trk{background:rgba(121,199,154,0.12);color:var(--win);border:1px solid rgba(121,199,154,0.3)}
+
+/* Bid/tricks total badge */
+.totalbadge{
+  display:inline-flex;align-items:center;gap:6px;
+  padding:6px 12px;
+  border-radius:99px;
+  background:rgba(212,182,117,0.08);
+  border:1px solid rgba(212,182,117,0.2);
+  font-family:"Geist Mono",monospace;
+  font-size:0.82rem;
+  color:var(--gold-bright);
+}
+.totalbadge.warn{
+  background:rgba(214,86,86,0.08);
+  border-color:rgba(214,86,86,0.3);
+  color:var(--red);
+}
+.totalbadge.ok{
+  background:rgba(121,199,154,0.08);
+  border-color:rgba(121,199,154,0.3);
+  color:var(--win);
+}
+
+/* Settings */
+.setting-row{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:14px 0;
+  border-bottom:1px solid var(--line);
+}
+.setting-row:last-child{border-bottom:none}
+.setting-row .lbl{display:flex;flex-direction:column;gap:2px;flex:1;padding-right:14px}
+.setting-row .lbl .t{font-weight:500;font-size:0.95rem}
+.setting-row .lbl .d{font-size:0.78rem;color:var(--muted);line-height:1.4}
+
+.rh-cell{padding:8px 6px;text-align:center;background:var(--panel);border-radius:6px;font-family:"Geist Mono",monospace;font-size:0.82rem}
+.rh-cell.pos{color:var(--win)}
+.rh-cell.neg{color:var(--loss)}
+.rh-cell.zero{color:var(--muted)}
+
+
+/* Round result cards / reaction MP4 videos */
+.round-recap{
+  background:linear-gradient(180deg, rgba(212,182,117,0.07), rgba(15,29,24,0.96));
+}
+.result-card{
+  display:grid;
+  grid-template-columns:1fr auto;
+  gap:10px;
+  align-items:center;
+  padding:12px;
+  background:rgba(7,16,12,0.35);
+  border:1px solid var(--line);
+  border-radius:14px;
+}
+.result-card.team-0{border-left:3px solid var(--gold)}
+.result-card.team-1{border-left:3px solid #7ab8d4}
+.result-card.team-2{border-left:3px solid #c47ab8}
+.result-card.team-3{border-left:3px solid #b8c47a}
+.result-stats{display:flex;gap:8px;flex-wrap:wrap;margin-top:6px}
+.result-pill{
+  padding:4px 8px;
+  border-radius:99px;
+  background:rgba(255,255,255,0.04);
+  border:1px solid var(--line);
+  font-family:"Geist Mono",monospace;
+  font-size:0.72rem;
+  color:var(--muted);
+}
+.reaction-video{
+  width:96px;
+  height:72px;
+  object-fit:cover;
+  border:1px solid rgba(212,182,117,0.22);
+  border-radius:12px;
+  overflow:hidden;
+  background:var(--panel);
+  box-shadow:0 8px 18px -10px rgba(0,0,0,0.7);
+  animation:reactionPop .28s ease both;
+}
+.winner-celebration .reaction-video.winner{
+  width:100% !important;
+  height:360px !important;
+  max-height:none !important;
+  aspect-ratio:auto !important;
+  object-fit:contain !important;
+  display:block !important;
+  margin-top:18px;
+  border-radius:18px;
+  background:#000;
+}
+.winner-celebration video{
+  object-fit:contain !important;
+  height:auto !important;
+  max-height:none !important;
+}
+
+@media (max-width:420px){
+  .winner-celebration .reaction-video.winner{
+    height:300px !important;
+  }
+}
+
+
+.winner-celebration{
+  position:relative;
+  overflow:hidden;
+  padding:22px;
+  background:
+    radial-gradient(circle at 50% 0%, rgba(240,213,156,0.22), transparent 45%),
+    linear-gradient(180deg, rgba(212,182,117,0.09), rgba(15,61,44,0.34));
+  border:1px solid rgba(212,182,117,0.28);
+  border-radius:22px;
+  box-shadow:var(--shadow), inset 0 1px 0 rgba(255,255,255,0.08);
+}
+.winner-celebration::before{
+  content:"🏆";
+  position:absolute;
+  right:16px;
+  top:8px;
+  font-size:3rem;
+  opacity:.18;
+  transform:rotate(12deg);
+}
+@keyframes reactionPop{
+  from{opacity:0;transform:scale(.92) translateY(4px)}
+  to{opacity:1;transform:scale(1) translateY(0)}
+}
+@media (max-width:420px){
+  .result-card{grid-template-columns:1fr 82px}
+  .reaction-video{width:82px;height:66px}
+}
+
+.mini-board-btn{
+  border:1px solid rgba(212,182,117,0.35);
+  background:rgba(212,182,117,0.08);
+  color:var(--gold-bright);
+  border-radius:99px;
+  padding:7px 12px;
+  font-family:"Geist Mono",monospace;
+  font-size:0.72rem;
+  font-weight:600;
+  letter-spacing:0.04em;
+  cursor:pointer;
+}
+.mini-board-btn.active{
+  background:linear-gradient(180deg, var(--gold-bright), var(--gold));
+  color:var(--ink);
+}
+.mini-score-board{
+  padding:14px;
+}
+.mini-score-board .scroll-x{
+  margin-top:8px;
+}
+.mini-table{
+  width:100%;
+  min-width:720px;
+  border-collapse:collapse;
+  font-variant-numeric:tabular-nums;
+}
+.mini-table th{
+  color:var(--muted);
+  font-size:0.68rem;
+  letter-spacing:0.14em;
+  text-transform:uppercase;
+  font-weight:600;
+  padding:8px 10px;
+  border-bottom:1px solid var(--line);
+  text-align:center;
+}
+.mini-table th:first-child,
+.mini-table td:first-child{
+  text-align:left;
+  width:62px;
+}
+.mini-table td{
+  padding:10px;
+  border-bottom:1px solid rgba(31,58,46,0.8);
+  text-align:center;
+  color:var(--muted);
+}
+.mini-table .round-cell{
+  display:flex;
+  align-items:center;
+  gap:8px;
+}
+.mini-table .round-no{
+  font-family:"Fraunces",serif;
+  font-style:italic;
+  color:var(--gold-bright);
+  font-size:1.05rem;
+  min-width:18px;
+}
+.score-count-btn{
+  border:1px solid rgba(212,182,117,0.35);
+  background:rgba(212,182,117,0.08);
+  color:var(--gold-bright);
+  border-radius:8px;
+  padding:4px 7px;
+  font-family:"Geist Mono",monospace;
+  font-size:0.62rem;
+  cursor:pointer;
+  white-space:nowrap;
+}
+.score-count-btn.active{
+  background:linear-gradient(180deg, var(--gold-bright), var(--gold));
+  color:var(--ink);
+}
+.mini-table .team-head-name{
+  display:block;
+  margin-bottom:3px;
+}
+.mini-table .betwon-head{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:4px;
+  color:var(--muted);
+  font-family:"Geist Mono",monospace;
+  font-size:0.62rem;
+  letter-spacing:0.06em;
+}
+.mini-table .betwon-grid{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:4px;
+  align-items:center;
+  font-family:"Geist Mono",monospace;
+  font-size:0.88rem;
+  color:var(--muted);
+}
+
+.mini-table .won-with-score{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:6px;
+  flex-wrap:wrap;
+}
+.mini-table .cell-score{
+  font-family:"Geist Mono",monospace;
+  font-size:0.72rem;
+  opacity:0.95;
+}
+.mini-table .cell-score.pos{color:var(--win)}
+.mini-table .cell-score.neg{color:var(--red)}
+.mini-table .cell-score.zero{color:var(--muted)}
+.mini-table .score-row td{
+  background:rgba(212,182,117,0.045);
+  border-top:1px solid rgba(212,182,117,0.18);
+  border-bottom:1px solid rgba(212,182,117,0.18);
+  padding:12px 10px;
+}
+.score-line{
+  display:grid;
+  grid-template-columns:repeat(auto-fit, minmax(120px, 1fr));
+  gap:8px;
+  text-align:left;
+}
+.score-line .score-box{
+  color:var(--cream);
+  font-family:"Geist Mono",monospace;
+  font-size:0.82rem;
+}
+.score-line .score-box span{
+  color:var(--gold-bright);
+  font-weight:700;
+}
+.score-line .score-box .pos{color:var(--win)}
+.score-line .score-box .neg{color:var(--red)}
+.final-score-line{
+  margin-top:10px;
+  padding-top:10px;
+  border-top:1px solid rgba(212,182,117,0.18);
+}
+.mini-table .total-cell{
+  font-family:"Geist Mono",monospace;
+  font-size:0.95rem;
+  color:var(--gold-bright);
+  font-weight:600;
+}
+
+.team-round-row .info .nm{white-space:normal}
+.team-members-line{font-size:0.78rem;color:var(--muted);margin-top:2px}
+.team-round-meta{font-size:0.74rem;color:var(--muted);margin-top:3px}
+.seat-card-chain{display:flex;gap:3px;align-items:center}
+.seat-card-chain .arrow{font-size:0.62rem;color:var(--gold);opacity:.75}
+
+@media (max-width: 380px){
+  .view{padding:8px 16px 32px}
+  .topbar{padding:14px 16px 10px}
+  .chip-grid{grid-template-columns:repeat(3,1fr)}
+  .seat-mark{width:64px}
+  .seat-mark .seat-name-pill{font-size:0.72rem;padding:3px 8px;max-width:84px}
+}
+</style>
+</head>
+<body>
+<div class="app">
+  <div id="topbar"></div>
+  <div id="view" class="view"></div>
+</div>
+<div id="modal-root"></div>
+<div id="toast-root"></div>
+
+<script>
+/* ════════════════════════════════════════════════════════════════════
+   SPADES SCORING APP
+   ════════════════════════════════════════════════════════════════════ */
+
+const STORAGE_KEY = "spades-scoring-app-v3";
+const OLD_STORAGE_KEY = "spade-room-v1";
+
+const SUITS = [
+  { id:"spade",   sym:"♠", name:"Spades",   color:"black" },
+  { id:"heart",   sym:"♥", name:"Hearts",   color:"red"   },
+  { id:"diamond", sym:"♦", name:"Diamonds", color:"red"   },
+  { id:"club",    sym:"♣", name:"Clubs",    color:"black" },
+];
+const CARD_VALUES = [
+  { v:2, l:"2" },{ v:3, l:"3" },{ v:4, l:"4" },{ v:5, l:"5" },{ v:6, l:"6" },
+  { v:7, l:"7" },{ v:8, l:"8" },{ v:9, l:"9" },{ v:10, l:"10" },
+  { v:11, l:"J" },{ v:12, l:"Q" },{ v:13, l:"K" },{ v:14, l:"A" },
+];
+
+const TEAM_COLORS = ["var(--gold)", "#7ab8d4", "#c47ab8", "#b8c47a"];
+
+const DEFAULT_RULES = {
+  pointsPerTrick: 10,
+  penaltyPerMissed: 10,
+  nilBidPenaltyPerTrick: 5,
+  nilBidSuccessBonus: 0,
+  rewardOvertricks: true,
+};
+
+/* ── Persistent state ───────────────────────────────────── */
+let state = {
+  view: "home",
+  game: null,
+  history: [],
+  rules: { ...DEFAULT_RULES },
+  setup: null,
+  setupStep: 1,
+  showScoreTable: false,
+  scoreBreaks: {},
+};
+
+function loadState(){
+  try{
+    let raw = localStorage.getItem(STORAGE_KEY);
+    if(!raw){
+      const old = localStorage.getItem(OLD_STORAGE_KEY);
+      if(old) raw = old;
+    }
+    if(raw){
+      const saved = JSON.parse(raw);
+      state.game = saved.game ?? null;
+      state.history = saved.history ?? [];
+      state.rules = { ...DEFAULT_RULES, ...(saved.rules ?? {}) };
+      // Migrate: card → cards[]
+      const migrateGame = g => {
+        if(!g || !g.players) return;
+        g.players.forEach(p => {
+          if(p.card && !p.cards){ p.cards = [p.card]; delete p.card; }
+          if(!p.cards) p.cards = [];
+        });
+      };
+      migrateGame(state.game);
+      (state.history || []).forEach(migrateGame);
+    }
+  }catch(e){ console.warn("load failed", e); }
+}
+function saveState(){
+  try{
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({
+      game: state.game,
+      history: state.history,
+      rules: state.rules,
+    }));
+  }catch(e){ console.warn("save failed", e); }
+}
+
+/* ── Scoring engine ─────────────────────────────────────── */
+function calcScore(bid, won, rules){
+  const winPoints = rules.pointsPerTrick ?? 10;
+  const missedPenalty = rules.penaltyPerMissed ?? 10;
+  const extraPenalty = rules.nilBidPenaltyPerTrick ?? 5;
+
+  if(bid === 0 && won === 0){
+    return 0;
+  }
+
+  if(won === bid){
+    return bid * winPoints;
+  }
+
+  if(won < bid){
+    const made = won * winPoints;
+    const missed = (bid - won) * missedPenalty;
+    return made - missed;
+  }
+
+  // won > bid: count only the bet as points, extra wins reduce score
+  const made = bid * winPoints;
+  const extra = (won - bid) * extraPenalty;
+  return made - extra;
+}
+
+const VIDEO_ASSETS = {
+  nilSuccess: "public/videos/nil-success.mp4",
+  overperform: "public/videos/overperform.mp4",
+  failedBid: "public/videos/failed-bid.mp4",
+  perfectBid: "public/videos/perfect-bid.mp4",
+  winnerCelebration: "public/videos/winner-celebration.mp4",
+};
+
+function reactionVideo(bid, won){
+  // Priority: Safe Zero → Correct Bets → Extra Wins → Missed Bets
+  if(bid === 0 && won === 0) return { label:"Safe Zero Bets", url:VIDEO_ASSETS.nilSuccess };
+  if(won === bid) return { label:"Correct Bets", url:VIDEO_ASSETS.perfectBid };
+  if(won > bid) return { label:"Extra Wins", url:VIDEO_ASSETS.overperform };
+  if(won < bid) return { label:"Missed Bets", url:VIDEO_ASSETS.failedBid };
+  return null;
+}
+
+function renderReactionVideo(reaction, className=""){
+  if(!reaction) return "";
+  return `<video class="reaction-video ${className}" title="${escape(reaction.label)} reaction video" autoplay muted loop playsinline preload="metadata" onerror="this.style.display='none'">
+    <source src="${reaction.url}" type="video/mp4" />
+  </video>`;
+}
+
+function formatScore(n){ return n > 0 ? `+${n}` : `${n}`; }
+
+function getRoundEntries(g, rd){
+  if(!g || !rd) return [];
+  if(g.mode === "team"){
+    return g.teams.map((team, idx) => {
+      const members = team.playerIds.map(pid => g.players.find(p => p.id === pid)).filter(Boolean);
+      const bid = members.reduce((sum, p) => sum + ((rd.bids && rd.bids[p.id]) || 0), 0);
+      const won = members.reduce((sum, p) => sum + ((rd.tricks && rd.tricks[p.id]) || 0), 0);
+      const score = rd.teamScores ? (rd.teamScores[team.id] || 0) : calcScore(bid, won, state.rules);
+      return {
+        id: team.id,
+        name: team.name,
+        members: members.map(p => p.name),
+        paletteIdx: team.paletteIdx ?? idx,
+        bid, won, score,
+        reaction: reactionVideo(bid, won),
+      };
+    });
+  }
+  return g.players.map(p => {
+    const bid = (rd.bids && rd.bids[p.id]) || 0;
+    const won = (rd.tricks && rd.tricks[p.id]) || 0;
+    const score = (rd.scores && rd.scores[p.id]) || calcScore(bid, won, state.rules);
+    return { id:p.id, name:p.name, members:null, paletteIdx:null, bid, won, score, reaction:reactionVideo(bid, won) };
+  });
+}
+
+function renderRoundRecap(g, rd){
+  if(!rd) return "";
+  const entries = getRoundEntries(g, rd);
+  return `
+    <div class="panel round-recap">
+      <div class="row between" style="margin-bottom:14px">
+        <h3 class="label">Round ${rd.roundNumber}</h3>
+        <span class="subtle mono" style="font-size:0.76rem">bet / won / score</span>
+      </div>
+      <div class="stack-sm">
+        ${entries.map(en => `
+          <div class="result-card ${en.paletteIdx !== null ? `team-${en.paletteIdx}` : ''}">
+            <div>
+              <div style="font-weight:600">${escape(en.name)}</div>
+              ${en.members ? `<div class="subtle" style="font-size:0.76rem;margin-top:2px">${en.members.map(escape).join(' & ')}</div>` : ""}
+              <div class="result-stats">
+                <span class="result-pill">bet ${en.bid}</span>
+                <span class="result-pill">won ${en.won}</span>
+                <span class="result-pill" style="color:${en.score>=0?'var(--win)':'var(--red)'}">${formatScore(en.score)}</span>
+                ${en.reaction ? `<span class="result-pill" style="color:var(--gold-bright)">${en.reaction.label}</span>` : ""}
+              </div>
+            </div>
+            ${en.reaction ? renderReactionVideo(en.reaction) : `<span class="score-val ${en.score>0?'pos':en.score<0?'neg':''}" style="font-size:1.05rem">${formatScore(en.score)}</span>`}
+          </div>
+        `).join("")}
+      </div>
+    </div>`;
+}
+
+function playerTotal(playerId){
+  if(!state.game) return 0;
+  return state.game.rounds.reduce((sum, r) => sum + ((r.scores && r.scores[playerId]) || 0), 0);
+}
+function teamTotal(teamId){
+  if(!state.game) return 0;
+  const team = state.game.teams.find(t => t.id === teamId);
+  if(!team) return 0;
+  return state.game.rounds.reduce((sum, r) => {
+    if(r.teamScores && r.teamScores[teamId] !== undefined) return sum + r.teamScores[teamId];
+    // Backward compatibility for older saved games that did not store teamScores.
+    const bid = team.playerIds.reduce((s, pid) => s + ((r.bids && r.bids[pid]) || 0), 0);
+    const won = team.playerIds.reduce((s, pid) => s + ((r.tricks && r.tricks[pid]) || 0), 0);
+    return sum + calcScore(bid, won, state.rules);
+  }, 0);
+}
+function rankings(){
+  if(!state.game) return [];
+  if(state.game.mode === "individual"){
+    const arr = state.game.players.map(p => ({
+      id:p.id, name:p.name, total:playerTotal(p.id), team:null,
+    }));
+    arr.sort((a,b) => b.total - a.total);
+    return arr;
+  }else{
+    const arr = state.game.teams.map((t, idx) => ({
+      id:t.id, name:t.name, total:teamTotal(t.id),
+      members: t.playerIds.map(pid => state.game.players.find(p=>p.id===pid).name),
+      paletteIdx: t.paletteIdx ?? idx,
+    }));
+    arr.sort((a,b) => b.total - a.total);
+    return arr;
+  }
+}
+
+/* ── Card / seating / tie helpers ───────────────────────── */
+function formatCard(card){
+  if(!card) return "—";
+  const suit = SUITS.find(s => s.id === card.suit);
+  const v = CARD_VALUES.find(x => x.v === card.value);
+  return `${v.l}${suit.sym}`;
+}
+function renderMiniCard(card, sizeClass="small"){
+  if(!card) return "";
+  const suit = SUITS.find(s => s.id === card.suit);
+  const v = CARD_VALUES.find(x => x.v === card.value);
+  return `<div class="pcard ${sizeClass} ${suit.color==='red'?'red':''}">
+    <span class="tl"><span class="v">${v.l}</span><span>${suit.sym}</span></span>
+  </div>`;
+}
+
+// Compare two players by their card chain. Returns negative if a<b, positive if a>b, 0 if tied.
+function comparePlayerCards(a, b){
+  const ac = a.cards || [];
+  const bc = b.cards || [];
+  const len = Math.min(ac.length, bc.length);
+  for(let i = 0; i < len; i++){
+    const diff = ac[i].value - bc[i].value;
+    if(diff !== 0) return diff;
+  }
+  return ac.length - bc.length;
+}
+
+// Find unresolved tied groups by rank chain.
+// Important: if Hari has 3♣ → 7♦ but Dhanush only has 3♦,
+// the original 3 tie is still pending until Dhanush also draws again.
+function findTiedGroups(players){
+  function unresolved(group, depth){
+    const buckets = new Map();
+    group.forEach(p => {
+      if(!p.cards || p.cards.length <= depth) return;
+      const key = p.cards[depth].value;
+      if(!buckets.has(key)) buckets.set(key, []);
+      buckets.get(key).push(p);
+    });
+
+    const out = [];
+    buckets.forEach(bucket => {
+      if(bucket.length <= 1) return;
+
+      // They matched at this depth. Everyone in the bucket must draw the
+      // next card before the app is allowed to decide that the tie is solved.
+      const nextDepth = depth + 1;
+      if(bucket.some(p => (p.cards || []).length <= nextDepth)){
+        out.push(bucket);
+        return;
+      }
+
+      const deeper = unresolved(bucket, nextDepth);
+      out.push(...deeper);
+    });
+    return out;
+  }
+  return unresolved(players.filter(p => p.cards && p.cards.length > 0), 0);
+}
+
+// Auto-generate teams from circular seating: seat i partners seat i + N/2
+function autoGenerateTeams(g){
+  if(g.mode !== "team") return [];
+  const N = g.players.length;
+  if(N % 2 !== 0) return [];
+  const half = N / 2;
+  const seated = [...g.players].sort((a,b) => a.seatIndex - b.seatIndex);
+  const teams = [];
+  for(let i = 0; i < half; i++){
+    const a = seated[i];
+    const b = seated[i + half];
+    teams.push({
+      id: `t${i}`,
+      name: `Team ${i + 1}`,
+      playerIds: [a.id, b.id],
+      paletteIdx: i,
+    });
+  }
+  // Apply teamId back to player objects
+  teams.forEach(t => {
+    t.playerIds.forEach(pid => {
+      const p = g.players.find(x => x.id === pid);
+      if(p) p.teamId = t.id;
+    });
+  });
+  return teams;
+}
+
+function finalizeSeating(g){
+  // Sort players by card chain
+  const dir = g.sortDirection === "asc" ? 1 : -1;
+  const sorted = [...g.players].sort((a,b) => dir * comparePlayerCards(a, b));
+  sorted.forEach((p, i) => { p.seatIndex = i; });
+  if(g.mode === "team"){
+    g.teams = autoGenerateTeams(g);
+  }else{
+    g.teams = [];
+    g.players.forEach(p => p.teamId = null);
+  }
+  g.seatingFinalized = true;
+}
+function unfinalizeSeating(g){
+  g.seatingFinalized = false;
+  g.teams = [];
+  g.players.forEach(p => { p.seatIndex = null; p.teamId = null; });
+}
+
+/* ── Utilities ──────────────────────────────────────────── */
+function uid(){ return Math.random().toString(36).slice(2,10); }
+function fmtDate(ts){
+  const d = new Date(ts);
+  const today = new Date(); today.setHours(0,0,0,0);
+  const dDay = new Date(ts); dDay.setHours(0,0,0,0);
+  const diffDays = (today - dDay) / 86400000;
+  const hh = String(d.getHours()).padStart(2,"0");
+  const mm = String(d.getMinutes()).padStart(2,"0");
+  if(diffDays === 0) return `Today, ${hh}:${mm}`;
+  if(diffDays === 1) return `Yesterday, ${hh}:${mm}`;
+  return d.toLocaleDateString(undefined, { month:"short", day:"numeric", year: d.getFullYear()!==today.getFullYear() ? "numeric" : undefined });
+}
+function escape(str){
+  return String(str).replace(/[&<>"']/g, ch => ({
+    "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
+  }[ch]));
+}
+function deepClone(o){ return JSON.parse(JSON.stringify(o)); }
+
+/* ── Toast ──────────────────────────────────────────────── */
+let toastTimer = null;
+function toast(msg){
+  const root = document.getElementById("toast-root");
+  root.innerHTML = `<div class="toast">${escape(msg)}</div>`;
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => { root.innerHTML = ""; }, 2400);
+}
+function showBetTotalToast(totalBets, roundNumber){
+  if(totalBets < roundNumber){
+    toast("Under bets");
+  }else if(totalBets === roundNumber){
+    toast("Correct bets");
+  }else{
+    toast("Over bets");
+  }
+}
+
+/* ── Modal ──────────────────────────────────────────────── */
+function modal(html, opts={}){
+  const root = document.getElementById("modal-root");
+  root.innerHTML = `<div class="modal-bg" data-close>
+    <div class="modal" onclick="event.stopPropagation()">${html}</div>
+  </div>`;
+  if(opts.closeOnBg !== false){
+    root.querySelector(".modal-bg").addEventListener("click", e => {
+      if(e.target.dataset.close !== undefined) closeModal();
+    });
+  }
+}
+function closeModal(){ document.getElementById("modal-root").innerHTML = ""; }
+
+/* ── Routing / rendering ────────────────────────────────── */
+function setView(v){ state.view = v; render(); }
+function render(){
+  renderTopbar();
+  const v = document.getElementById("view");
+  switch(state.view){
+    case "home":     v.innerHTML = viewHome(); break;
+    case "setup":    v.innerHTML = viewSetup(); break;
+    case "seating":  v.innerHTML = viewSeating(); break;
+    case "playing":  v.innerHTML = viewPlaying(); break;
+    case "summary":  v.innerHTML = viewSummary(); break;
+    case "history":  v.innerHTML = viewHistory(); break;
+    case "settings": v.innerHTML = viewSettings(); break;
+    case "rules":    v.innerHTML = viewRules(); break;
+    default: v.innerHTML = viewHome();
+  }
+  bindView();
+  if(state.view === "settings") bindSettingsHandlers();
+}
+
+function renderTopbar(){
+  const showBack = state.view !== "home";
+  document.getElementById("topbar").outerHTML = `
+    <div id="topbar" class="topbar">
+      <div class="row" style="gap:12px">
+        ${showBack
+          ? `<button class="iconbtn" data-action="back" aria-label="Back">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M15 18l-6-6 6-6"/></svg>
+             </button>`
+          : `<div class="brand">
+              <span class="suits"><span class="b">♠</span><span class="r">♥</span><span class="r">♦</span><span class="b">♣</span></span>
+              <span>Spades Scoring App</span>
+             </div>`
+        }
+      </div>
+      <div class="row">
+        ${state.view === "home" ? `
+          <button class="iconbtn" data-action="goto-history" aria-label="History">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 12a9 9 0 1 0 9-9 9.74 9.74 0 0 0-6.74 2.74L3 8M3 3v5h5M12 7v5l3 3"/></svg>
+          </button>
+          <button class="iconbtn" data-action="goto-settings" aria-label="Settings">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33 1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82 1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+          </button>
+        ` : ""}
+      </div>
+    </div>`;
+}
+
+function bindView(){
+  document.querySelectorAll("[data-action]").forEach(el => {
+    el.addEventListener("click", e => handleAction(el.dataset.action, el.dataset, e));
+  });
+}
+
+function handleAction(action, ds, e){
+  switch(action){
+    case "back": navigateBack(); break;
+    case "goto-history": setView("history"); break;
+    case "goto-settings": setView("settings"); break;
+    case "new-game": startSetup(); break;
+    case "continue-game": setView(state.game.completedAt ? "summary" : (state.game.seatingFinalized && state.game.currentRound > 0 ? "playing" : "seating")); break;
+    case "abandon-game": confirmStop(); break;
+    case "view-rules": setView("rules"); break;
+
+    /* setup wizard */
+    case "set-players": setSetupCount(parseInt(ds.n)); break;
+    case "set-mode": setSetupMode(ds.mode); break;
+    case "setup-next": setupNext(); break;
+    case "setup-back": setupBack(); break;
+
+    /* seating */
+    case "open-card-picker": openCardPicker(ds.pid); break;
+    case "toggle-sort": toggleSortDirection(ds.dir); break;
+    case "reset-cards": confirmResetCards(); break;
+    case "start-game": startFirstRound(); break;
+
+    /* playing */
+    case "bid-inc": adjustBid(ds.pid, 1); break;
+    case "bid-dec": adjustBid(ds.pid, -1); break;
+    case "trick-inc": adjustTrick(ds.pid, 1); break;
+    case "trick-dec": adjustTrick(ds.pid, -1); break;
+    case "team-bid-inc": adjustTeamBid(ds.tid, 1); break;
+    case "team-bid-dec": adjustTeamBid(ds.tid, -1); break;
+    case "team-trick-inc": adjustTeamTrick(ds.tid, 1); break;
+    case "team-trick-dec": adjustTeamTrick(ds.tid, -1); break;
+    case "confirm-bids": confirmBids(); break;
+    case "confirm-tricks": confirmTricks(); break;
+    case "undo-round": undoLastRound(); break;
+    case "show-history-table": showRoundHistoryModal(); break;
+    case "toggle-score-table": toggleScoreTable(); break;
+    case "toggle-score-break": toggleScoreBreak(ds.round); break;
+    case "show-table": showSeatingModal(); break;
+
+    /* summary */
+    case "save-and-exit": saveAndExit(); break;
+    case "play-again": playAgain(); break;
+
+    /* history */
+    case "open-history-game": openHistoryGame(ds.id); break;
+    case "delete-history-game": deleteHistoryGame(ds.id); break;
+    case "clear-history": confirmClearHistory(); break;
+
+    /* settings */
+    case "reset-rules": resetRules(); break;
+
+    /* modal */
+    case "close-modal": closeModal(); break;
+  }
+}
+
+function navigateBack(){
+  if(state.view === "playing" && state.game){ setView("home"); return; }
+  if(state.view === "summary"){ setView("home"); return; }
+  if(state.view === "seating"){ setView("setup"); return; }
+  if(state.view === "setup"){
+    if(state.setupStep > 1){ state.setupStep--; render(); return; }
+    setView("home"); return;
+  }
+  if(state.view === "rules"){ setView("settings"); return; }
+  setView("home");
+}
+
+/* ════════════════════════════════════════════════════════
+   VIEW: HOME
+   ════════════════════════════════════════════════════════ */
+function viewHome(){
+  const hasGame = state.game && !state.game.completedAt;
+  return `
+  <div class="view-narrow stack-lg" style="padding-top:14px">
+    <div>
+      <div class="round-badge" style="margin-bottom:18px">
+        <span>SCORE</span><span>·</span><span class="num">13 rounds</span>
+      </div>
+      <h1 class="display">Spades<br/><em>score</em>.</h1>
+      <p class="subtle" style="margin-top:14px;max-width:340px">
+        Add the bets, add the wins, and see the score.
+      </p>
+    </div>
+
+    ${hasGame ? `
+      <div class="panel felt">
+        <div class="row between" style="margin-bottom:10px">
+          <h3 class="label" style="color:var(--gold-bright)">Game started</h3>
+          <span class="round-badge">${state.game.seatingFinalized
+            ? `<span class="num">R${state.game.currentRound}</span><span>of 13</span>`
+            : `<span>seating</span>`}</span>
+        </div>
+        <p class="subtle" style="color:var(--cream);margin-bottom:14px">
+          ${state.game.players.length} players · ${state.game.mode === "team" ? "Team mode" : "Individual"}
+        </p>
+        <div class="btn-row">
+          <button class="btn btn-primary" data-action="continue-game">Resume</button>
+          <button class="btn btn-danger" data-action="abandon-game">Stop</button>
+        </div>
+      </div>
+    ` : ""}
+
+    <div class="stack-sm">
+      <button class="btn btn-primary" data-action="new-game" style="padding:18px">
+        <span style="font-size:1.05rem">＋ &nbsp;New Game</span>
+      </button>
+      <button class="btn btn-ghost" data-action="goto-history">Old Games</button>
+      <button class="btn btn-ghost" data-action="view-rules">Scoring</button>
+    </div>
+
+    <div class="panel panel-tight">
+      <div class="row between" style="margin-bottom:10px">
+        <h3 class="label">Scoring</h3>
+      </div>
+      <p class="subtle" style="font-size:0.85rem;line-height:1.6">
+        <span class="gold">+${state.rules.pointsPerTrick}</span> for each win · <span style="color:var(--red)">−${state.rules.penaltyPerMissed}</span> for missed wins · <span style="color:var(--red)">−${state.rules.nilBidPenaltyPerTrick}</span> for extra wins.
+      </p>
+    </div>
+  </div>`;
+}
+
+/* ════════════════════════════════════════════════════════
+   FLOW: SETUP WIZARD (2 steps: count+mode, then names)
+   ════════════════════════════════════════════════════════ */
+function startSetup(){
+  state.setup = {
+    playerCount: 4,
+    mode: "team",
+    players: Array.from({length:4}, (_,i) => ({ id: uid(), name: "" })),
+  };
+  state.setupStep = 1;
+  setView("setup");
+}
+function setSetupCount(n){
+  state.setup.playerCount = n;
+  const cur = state.setup.players;
+  if(cur.length < n){
+    for(let i=cur.length; i<n; i++) cur.push({ id: uid(), name: "" });
+  }else if(cur.length > n){
+    cur.length = n;
+  }
+  // If team mode isn't valid for this count, force individual
+  if(![4,6,8].includes(n) && state.setup.mode === "team") state.setup.mode = "individual";
+  render();
+}
+function setSetupMode(mode){
+  if(mode === "team" && ![4,6,8].includes(state.setup.playerCount)) return;
+  state.setup.mode = mode;
+  render();
+}
+function setupNext(){
+  if(state.setupStep === 1){
+    state.setupStep = 2; render(); return;
+  }
+  if(state.setupStep === 2){
+    const inputs = document.querySelectorAll("[data-pname]");
+    inputs.forEach(inp => {
+      const p = state.setup.players.find(x => x.id === inp.dataset.pname);
+      if(p) p.name = inp.value.trim();
+    });
+    const empties = state.setup.players.filter(p => !p.name);
+    if(empties.length){ toast("Please give every player a name"); render(); return; }
+    const lower = state.setup.players.map(p => p.name.toLowerCase());
+    if(new Set(lower).size !== lower.length){ toast("Player names must be unique"); render(); return; }
+    finalizeSetup();
+  }
+}
+function setupBack(){
+  if(state.setupStep > 1){ state.setupStep--; render(); }
+  else setView("home");
+}
+function finalizeSetup(){
+  state.game = {
+    id: uid(),
+    createdAt: Date.now(),
+    completedAt: null,
+    mode: state.setup.mode,
+    players: state.setup.players.map(p => ({
+      id: p.id, name: p.name, cards: [], seatIndex: null, teamId: null,
+    })),
+    teams: [],
+    sortDirection: "asc",
+    seatingFinalized: false,
+    rounds: [],
+    currentRound: 0,
+    phase: "bidding",
+    pendingBids: {},
+    pendingTricks: {},
+  };
+  state.setup = null;
+  saveState();
+  setView("seating");
+}
+
+/* ════════════════════════════════════════════════════════
+   VIEW: SETUP
+   ════════════════════════════════════════════════════════ */
+function viewSetup(){
+  const step = state.setupStep;
+  const s = state.setup;
+  const teamModeAvailable = [4,6,8].includes(s.playerCount);
+
+  let body = "";
+  let progress = `<div class="round-badge" style="margin-bottom:18px">
+    <span>NEW GAME</span><span>·</span><span class="num">Step ${step} / 2</span>
+  </div>`;
+
+  if(step === 1){
+    const counts = [2,3,4,5,6,7,8];
+    body = `
+      <h1 class="display">Who's <em>playing</em>?</h1>
+      <p class="subtle" style="margin-top:14px">Pick how many players sit at the table.</p>
+      <div style="margin-top:24px">
+        <h3 class="label" style="margin-bottom:10px">Player count</h3>
+        <div class="chip-grid" style="grid-template-columns:repeat(4,1fr)">
+          ${counts.map(n => `
+            <div class="chip ${s.playerCount===n?"active":""}" data-action="set-players" data-n="${n}">${n}</div>
+          `).join("")}
+        </div>
+      </div>
+      <div style="margin-top:24px">
+        <h3 class="label" style="margin-bottom:10px">Mode</h3>
+        <div class="seg">
+          <button class="${s.mode==='individual'?'active':''}" data-action="set-mode" data-mode="individual">Individual</button>
+          <button class="${s.mode==='team'?'active':''}" data-action="set-mode" data-mode="team" ${!teamModeAvailable?'disabled':''}>Teams</button>
+        </div>
+        <p class="subtle" style="margin-top:10px;font-size:0.82rem;line-height:1.5">
+          ${s.mode === "team"
+            ? `Teams are made after card pick.`
+            : (teamModeAvailable
+                ? `Each player plays alone.`
+                : `Team game needs 4, 6, or 8 players.`)}
+        </p>
+      </div>
+      <div style="margin-top:32px">
+        <button class="btn btn-primary" data-action="setup-next">Continue</button>
+      </div>
+    `;
+  }else if(step === 2){
+    body = `
+      <h1 class="display">Add <em>names</em>.</h1>
+      <p class="subtle" style="margin-top:14px">Add everyone first.</p>
+      <div class="stack-sm" style="margin-top:24px">
+        ${s.players.map((p, i) => `
+          <div class="field">
+            <input class="input" type="text" placeholder="Player ${i+1}"
+              data-pname="${p.id}" value="${escape(p.name)}" maxlength="20" />
+          </div>
+        `).join("")}
+      </div>
+      <div class="btn-row" style="margin-top:24px">
+        <button class="btn btn-ghost" data-action="setup-back">Back</button>
+        <button class="btn btn-primary" data-action="setup-next">Next</button>
+      </div>
+    `;
+  }
+  return `<div class="view-narrow stack-lg">${progress}${body}</div>`;
+}
+
+/* ════════════════════════════════════════════════════════
+   VIEW: SEATING (drawing + tie-breakers + circle reveal)
+   ════════════════════════════════════════════════════════ */
+function viewSeating(){
+  const g = state.game;
+  const allPicked = g.players.every(p => p.cards && p.cards.length > 0);
+  const ties = allPicked ? findTiedGroups(g.players) : [];
+  const ready = allPicked && ties.length === 0;
+
+  if(ready && !g.seatingFinalized){
+    finalizeSeating(g);
+    saveState();
+  }
+  if(!ready && g.seatingFinalized){
+    // Edge case: tie was added retroactively
+    unfinalizeSeating(g);
+    saveState();
+  }
+
+  const tiedSet = new Set();
+  ties.forEach(group => group.forEach(p => tiedSet.add(p.id)));
+
+  const sortedForDisplay = [...g.players].sort((a, b) => {
+    // Show untied/no-card at top? Actually: show in entry order during drawing,
+    // by final seat order once ready.
+    if(ready) return a.seatIndex - b.seatIndex;
+    // Group tied players together
+    if(!a.cards.length && !b.cards.length) return 0;
+    if(!a.cards.length) return -1;
+    if(!b.cards.length) return 1;
+    // Tied players sink to the bottom for emphasis
+    const at = tiedSet.has(a.id), bt = tiedSet.has(b.id);
+    if(at && !bt) return 1;
+    if(!at && bt) return -1;
+    return 0;
+  });
+
+  const pickedCount = g.players.filter(p => p.cards.length > 0).length;
+
+  return `
+  <div class="view-narrow stack-lg">
+    <div>
+      <div class="round-badge" style="margin-bottom:18px">
+        <span>SEATING</span><span>·</span><span class="num">${ready ? "The table" : "The draw"}</span>
+      </div>
+      <h1 class="display">${ready ? "Seats are <em>ready</em>." : "Pick <em>cards</em>."}</h1>
+      <p class="subtle" style="margin-top:14px">
+        ${ready
+          ? (g.mode === "team"
+              ? "Teams are ready."
+              : "Seats are based on the cards.")
+          : "Each player picks one card."}
+      </p>
+    </div>
+
+    ${!ready ? `
+      <div>
+        <h3 class="label" style="margin-bottom:10px">Card order</h3>
+        <div class="seg">
+          <button class="${g.sortDirection==='asc'?'active':''}" data-action="toggle-sort" data-dir="asc">Low → High</button>
+          <button class="${g.sortDirection==='desc'?'active':''}" data-action="toggle-sort" data-dir="desc">High → Low</button>
+        </div>
+        <p class="subtle" style="margin-top:8px;font-size:0.78rem">
+          ${g.sortDirection === "asc"
+            ? "Lowest card gets seat 1."
+            : "Highest card gets seat 1."}
+        </p>
+      </div>
+    ` : ""}
+
+    ${ties.length > 0 ? `
+      <div class="tie-banner">
+        <div class="icon">!</div>
+        <div class="body">
+          <strong>Same card.</strong>
+          ${ties.length === 1
+            ? `${ties[0].length} players matched on ${formatTieKey(ties[0][0])}. They need to draw another card.`
+            : `${ties.length} groups of players matched ranks. Tied players need to draw another card.`}
+        </div>
+      </div>
+    ` : ""}
+
+    ${!ready ? `
+      <div class="row between">
+        <h3 class="label">${ties.length > 0 ? "Same-card players pick again" : "Players"}</h3>
+        <span class="subtle mono" style="font-size:0.78rem">${pickedCount} / ${g.players.length} drawn</span>
+      </div>
+      <div class="stack-sm">
+        ${sortedForDisplay.map(p => renderDrawRow(p, tiedSet)).join("")}
+      </div>
+      ${pickedCount > 0 ? `
+        <button class="btn btn-ghost" data-action="reset-cards" style="font-size:0.85rem;padding:10px">Reset all draws</button>
+      ` : ""}
+    ` : ""}
+
+    ${ready ? renderCircularTable(g) : ""}
+
+    ${ready && g.mode === "team" ? `
+      <div>
+        <h3 class="label" style="margin-bottom:10px">Teams</h3>
+        <div class="stack-sm">
+          ${g.teams.map(t => {
+            const members = t.playerIds.map(pid => g.players.find(p => p.id === pid));
+            return `
+              <div class="team-card team-${t.paletteIdx}">
+                <span class="tdot"></span>
+                <span class="members">${members.map(m => escape(m.name)).join(" &nbsp;<span style='color:var(--dim)'>+</span>&nbsp; ")}</span>
+              </div>
+            `;
+          }).join("")}
+        </div>
+        <p class="subtle" style="margin-top:10px;font-size:0.78rem;line-height:1.5">
+          These are the teams.
+        </p>
+      </div>
+    ` : ""}
+
+    ${ready ? `
+      <div class="btn-row">
+        <button class="btn btn-ghost" data-action="reset-cards">Pick Again</button>
+        <button class="btn btn-primary" data-action="start-game">Start Round 1</button>
+      </div>
+    ` : ""}
+  </div>`;
+}
+
+function renderDrawRow(p, tiedSet){
+  const hasCards = p.cards && p.cards.length > 0;
+  const isTied = tiedSet.has(p.id);
+  let cls = "draw-row";
+  if(isTied) cls += " tied";
+  else if(hasCards) cls += " settled";
+
+  let cardsStrip = "";
+  if(hasCards){
+    cardsStrip = `<div class="cards-strip">
+      ${p.cards.map((c, i) => `
+        ${i > 0 ? `<span class="arrow">→</span>` : ""}
+        ${renderMiniCard(c, "tiny")}
+      `).join("")}
+    </div>`;
+  }
+
+  let action = "";
+  if(!hasCards){
+    action = `<button class="pickbtn" data-action="open-card-picker" data-pid="${p.id}">+ Pick card</button>`;
+  }else if(isTied){
+    action = `<button class="pickbtn tiebreak" data-action="open-card-picker" data-pid="${p.id}">+ Tie-breaker</button>`;
+  }else{
+    // Settled — let them edit by tapping
+    action = `<button class="pickbtn" style="opacity:0.7" data-action="open-card-picker" data-pid="${p.id}">edit</button>`;
+  }
+
+  return `
+    <div class="${cls}">
+      <div class="nm">
+        ${escape(p.name)}
+        ${hasCards ? `<span class="sub ${isTied?'tied-sub':'settled-sub'}">${isTied ? `tied on ${formatTieKey(p)}` : `ranked`}</span>` : ""}
+      </div>
+      ${cardsStrip}
+      ${action}
+    </div>
+  `;
+}
+
+function formatTieKey(p){
+  if(!p.cards || !p.cards.length) return "";
+  const valueLabels = p.cards.map(c => {
+    const cv = CARD_VALUES.find(x => x.v === c.value);
+    return cv ? cv.l : c.value;
+  });
+  return valueLabels.join(" + ");
+}
+
+/* ── Circular table renderer ────────────────────────────── */
+function renderCircularTable(g, opts={}){
+  const N = g.players.length;
+  const seated = [...g.players].sort((a,b) => a.seatIndex - b.seatIndex);
+  const cx = 50, cy = 50;       // center as % of viewBox 100×100
+  const tableR = 32;             // table radius
+  const seatR = 42;              // seat marker radius (further out)
+
+  // Team connection lines through center
+  let teamLines = "";
+  if(g.mode === "team" && g.teams.length){
+    g.teams.forEach(t => {
+      const [aid, bid] = t.playerIds;
+      const ai = seated.findIndex(p => p.id === aid);
+      const bi = seated.findIndex(p => p.id === bid);
+      if(ai < 0 || bi < 0) return;
+      const aa = (ai / N) * 2 * Math.PI - Math.PI / 2;
+      const ba = (bi / N) * 2 * Math.PI - Math.PI / 2;
+      const x1 = cx + tableR * 0.7 * Math.cos(aa);
+      const y1 = cy + tableR * 0.7 * Math.sin(aa);
+      const x2 = cx + tableR * 0.7 * Math.cos(ba);
+      const y2 = cy + tableR * 0.7 * Math.sin(ba);
+      const color = TEAM_COLORS[t.paletteIdx % 4];
+      teamLines += `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}"
+        stroke="${color}" stroke-width="0.3" stroke-dasharray="1.2 1.2" opacity="0.55"/>`;
+    });
+  }
+
+  const seatMarks = seated.map((p, i) => {
+    const angle = (i / N) * 2 * Math.PI - Math.PI / 2;
+    const x = cx + seatR * Math.cos(angle);
+    const y = cy + seatR * Math.sin(angle);
+    const team = g.mode === "team" ? g.teams.find(t => t.playerIds.includes(p.id)) : null;
+    const teamCls = team ? `team-${team.paletteIdx}` : "";
+    const cards = p.cards || [];
+    const cardChain = cards.length
+      ? `<div class="seat-card-chain">${cards.map((c, idx) => `${idx > 0 ? '<span class="arrow">+</span>' : ''}${renderMiniCard(c, "tiny")}`).join("")}</div>`
+      : "";
+    return `
+      <div class="seat-mark ${teamCls}" style="left:${x}%;top:${y}%;animation-delay:${i * 0.06}s">
+        <div class="seat-num-badge">${i+1}</div>
+        ${cardChain}
+        <div class="seat-name-pill">${escape(p.name)}</div>
+        ${i === 0 ? `<div class="dealer-pill">DEALS</div>` : ""}
+      </div>
+    `;
+  }).join("");
+
+  return `
+  <div class="panel felt" style="padding:14px">
+    <div class="table-stage">
+      <svg viewBox="0 0 100 100" preserveAspectRatio="xMidYMid meet">
+        <defs>
+          <radialGradient id="felt-grad-${g.id}">
+            <stop offset="0%" stop-color="#1a5340"/>
+            <stop offset="60%" stop-color="#0f3d2c"/>
+            <stop offset="100%" stop-color="#0a2b1f"/>
+          </radialGradient>
+          <radialGradient id="felt-glow-${g.id}">
+            <stop offset="0%" stop-color="rgba(212,182,117,0.15)"/>
+            <stop offset="100%" stop-color="rgba(212,182,117,0)"/>
+          </radialGradient>
+        </defs>
+        <!-- Outer ring -->
+        <circle cx="${cx}" cy="${cy}" r="${tableR + 2}" fill="none" stroke="rgba(212,182,117,0.18)" stroke-width="0.4"/>
+        <!-- Felt -->
+        <circle cx="${cx}" cy="${cy}" r="${tableR}" fill="url(#felt-grad-${g.id})" stroke="rgba(212,182,117,0.35)" stroke-width="0.35"/>
+        <!-- Glow -->
+        <circle cx="${cx}" cy="${cy}" r="${tableR}" fill="url(#felt-glow-${g.id})"/>
+        <!-- Inner detail ring -->
+        <circle cx="${cx}" cy="${cy}" r="${tableR - 4}" fill="none" stroke="rgba(212,182,117,0.1)" stroke-width="0.2"/>
+        ${teamLines}
+        <!-- Center spade -->
+        <text x="${cx}" y="${cy + 4}" text-anchor="middle" font-family="Geist" font-size="14" fill="rgba(212,182,117,0.12)">♠</text>
+      </svg>
+      ${seatMarks}
+    </div>
+  </div>`;
+}
+
+function toggleSortDirection(dir){
+  if(state.game.sortDirection === dir) return;
+  state.game.sortDirection = dir;
+  // If already seated, re-finalize
+  if(state.game.seatingFinalized){
+    unfinalizeSeating(state.game);
+    finalizeSeating(state.game);
+  }
+  saveState();
+  render();
+}
+
+function openCardPicker(playerId){
+  const g = state.game;
+  const player = g.players.find(p => p.id === playerId);
+  if(!player) return;
+  const editingIndex = player.cards.length; // appending new card by default
+  // If they have a complete chain and aren't tied, "edit" replaces the first card and clears the rest.
+  const allPicked = g.players.every(p => p.cards.length > 0);
+  const ties = allPicked ? findTiedGroups(g.players) : [];
+  const tiedSet = new Set();
+  ties.forEach(grp => grp.forEach(p => tiedSet.add(p.id)));
+  const isEdit = player.cards.length > 0 && !tiedSet.has(player.id);
+
+  let picked = { value: null, suit: null };
+
+  function renderPicker(){
+    return `
+      <h2 class="section" style="margin-bottom:6px">
+        ${escape(player.name)}${isEdit ? "'s card" : (player.cards.length > 0 ? "'s tie-breaker" : "'s card")}
+      </h2>
+      <p class="subtle" style="font-size:0.85rem;margin-bottom:8px">
+        ${isEdit
+          ? "Change the card."
+          : (player.cards.length > 0
+              ? `Already drew ${formatChain(player.cards)} — pick another to break the tie.`
+              : "Pick the card.")}
+      </p>
+      ${player.cards.length > 0 && !isEdit ? `
+        <div class="row" style="gap:6px;margin-bottom:14px;flex-wrap:wrap">
+          ${player.cards.map((c, i) => `
+            ${i > 0 ? '<span style="color:var(--dim)">→</span>' : ''}
+            ${renderMiniCard(c, "tiny")}
+          `).join("")}
+        </div>
+      ` : ""}
+
+      <h3 class="label" style="margin-bottom:8px">Value</h3>
+      <div class="card-picker">
+        ${CARD_VALUES.map(cv => `
+          <button class="${picked.value===cv.v?'active':''}" data-pickv="${cv.v}">${cv.l}</button>
+        `).join("")}
+      </div>
+
+      <h3 class="label" style="margin-top:16px;margin-bottom:8px">Suit</h3>
+      <div class="suit-picker">
+        ${SUITS.map(s => `
+          <button class="${s.id} ${picked.suit===s.id?'active':''}" data-picks="${s.id}">${s.sym}</button>
+        `).join("")}
+      </div>
+
+      <p class="subtle" style="margin-top:14px;font-size:0.78rem;line-height:1.5">
+        Same card? Pick again.
+      </p>
+
+      <div class="btn-row" style="margin-top:20px">
+        <button class="btn btn-ghost" data-action="close-modal">Cancel</button>
+        <button class="btn btn-primary" id="confirm-pick"
+          ${!picked.value || !picked.suit ? "disabled" : ""}>
+          Done
+        </button>
+      </div>
+    `;
+  }
+  function formatChain(cards){
+    return cards.map(c => formatCard(c)).join(" → ");
+  }
+  modal(renderPicker());
+  function rerender(){ document.querySelector(".modal").innerHTML = renderPicker(); attach(); }
+  function attach(){
+    document.querySelectorAll("[data-pickv]").forEach(b => {
+      b.addEventListener("click", () => { picked.value = parseInt(b.dataset.pickv); rerender(); });
+    });
+    document.querySelectorAll("[data-picks]").forEach(b => {
+      b.addEventListener("click", () => { picked.suit = b.dataset.picks; rerender(); });
+    });
+    document.querySelectorAll("[data-action='close-modal']").forEach(b => {
+      b.addEventListener("click", closeModal);
+    });
+    const c = document.getElementById("confirm-pick");
+    if(c){
+      c.addEventListener("click", () => {
+        if(isEdit){
+          // Replace chain with single new primary card
+          player.cards = [{ value: picked.value, suit: picked.suit }];
+        }else{
+          // Append (initial OR tie-breaker)
+          player.cards.push({ value: picked.value, suit: picked.suit });
+        }
+        // If chain changes, unfinalize seating
+        if(g.seatingFinalized) unfinalizeSeating(g);
+        saveState(); closeModal(); render();
+      });
+    }
+  }
+  attach();
+}
+
+function confirmResetCards(){
+  modal(`
+    <h2 class="section" style="margin-bottom:10px">Pick cards again?</h2>
+    <p class="subtle">Everyone will pick again.</p>
+    <div class="btn-row" style="margin-top:20px">
+      <button class="btn btn-ghost" data-action="close-modal">Cancel</button>
+      <button class="btn btn-danger" id="confirm-reset">Reset</button>
+    </div>
+  `);
+  document.querySelectorAll("[data-action='close-modal']").forEach(b => b.addEventListener("click", closeModal));
+  document.getElementById("confirm-reset").addEventListener("click", () => {
+    state.game.players.forEach(p => { p.cards = []; });
+    unfinalizeSeating(state.game);
+    saveState(); closeModal(); render();
+  });
+}
+
+function startFirstRound(){
+  const g = state.game;
+  if(!g.seatingFinalized){ toast("Pick cards first"); return; }
+  g.currentRound = 1;
+  g.phase = "bidding";
+  g.pendingBids = {};
+  g.pendingTricks = {};
+  g.players.forEach(p => { g.pendingBids[p.id] = 0; g.pendingTricks[p.id] = 0; });
+  saveState();
+  setView("playing");
+}
+
+function showSeatingModal(){
+  modal(`
+    <div class="row between" style="margin-bottom:14px">
+      <h2 class="section">The table</h2>
+      <button class="iconbtn" data-action="close-modal" style="width:32px;height:32px">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M18 6L6 18M6 6l12 12"/></svg>
+      </button>
+    </div>
+    ${renderCircularTable(state.game)}
+    ${state.game.mode === "team" ? `
+      <div class="stack-sm" style="margin-top:14px">
+        ${state.game.teams.map(t => {
+          const members = t.playerIds.map(pid => state.game.players.find(p => p.id === pid));
+          return `
+            <div class="team-card team-${t.paletteIdx}">
+              <span class="tdot"></span>
+              <span class="members">${members.map(m => escape(m.name)).join(" + ")}</span>
+            </div>`;
+        }).join("")}
+      </div>
+    ` : ""}
+  `);
+  document.querySelectorAll("[data-action='close-modal']").forEach(b => b.addEventListener("click", closeModal));
+}
+
+/* ════════════════════════════════════════════════════════
+   VIEW: PLAYING
+   ════════════════════════════════════════════════════════ */
+function getTeamPending(teamId, bucket){
+  const g = state.game;
+  const team = g.teams.find(t => t.id === teamId);
+  if(!team) return 0;
+  return team.playerIds.reduce((sum, pid) => sum + ((bucket[pid]) || 0), 0);
+}
+function setTeamPending(teamId, bucket, value){
+  const g = state.game;
+  const team = g.teams.find(t => t.id === teamId);
+  if(!team) return;
+  team.playerIds.forEach((pid, i) => { bucket[pid] = i === 0 ? value : 0; });
+}
+function viewPlaying(){
+  const g = state.game;
+  if(g.currentRound > 13){ return viewSummary(); }
+  const r = g.currentRound;
+  const seated = [...g.players].sort((a,b) => a.seatIndex - b.seatIndex);
+  const isBidding = g.phase === "bidding";
+  const isTeamMode = g.mode === "team" && g.teams && g.teams.length;
+
+  const bidTotal = Object.values(g.pendingBids).reduce((a,b) => a+b, 0);
+  const trickTotal = Object.values(g.pendingTricks).reduce((a,b) => a+b, 0);
+
+  let bidWarn = "";
+  if(!isBidding){
+    if(trickTotal < r) bidWarn = `Need ${r - trickTotal} more`;
+    else if(trickTotal > r) bidWarn = `${trickTotal - r} too many`;
+  }
+
+  const rkRows = rankings();
+  const roundRows = isTeamMode ? g.teams.map((team, idx) => {
+    const members = team.playerIds.map(pid => g.players.find(p => p.id === pid)).filter(Boolean);
+    const bid = getTeamPending(team.id, g.pendingBids);
+    const trick = getTeamPending(team.id, g.pendingTricks);
+    const total = teamTotal(team.id);
+    return { kind:"team", id:team.id, name:team.name, members, paletteIdx:team.paletteIdx ?? idx, bid, trick, total };
+  }) : seated.map(p => {
+    const bid = g.pendingBids[p.id] ?? 0;
+    const trick = g.pendingTricks[p.id] ?? 0;
+    const total = playerTotal(p.id);
+    return { kind:"player", id:p.id, name:p.name, members:null, paletteIdx:null, bid, trick, total };
+  });
+
+  return `
+  <div class="stack-lg">
+    <div class="row between">
+      <div class="round-badge">
+        <span>ROUND</span><span class="num">${r}</span><span>·</span><span>${r} card${r>1?"s":""} each</span>
+      </div>
+      <div class="row" style="gap:8px">
+        <button class="iconbtn" data-action="show-table" aria-label="Seating" style="width:34px;height:34px">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="3.5" r="1.2" fill="currentColor"/><circle cx="20.5" cy="12" r="1.2" fill="currentColor"/><circle cx="12" cy="20.5" r="1.2" fill="currentColor"/><circle cx="3.5" cy="12" r="1.2" fill="currentColor"/></svg>
+        </button>
+        <button class="mini-board-btn ${state.showScoreTable ? 'active' : ''}" data-action="toggle-score-table">Board</button>
+        <div class="phase-pill ${isBidding?'bid':'trk'}">${isBidding?"Bets":"Wins"}</div>
+      </div>
+    </div>
+
+    ${state.showScoreTable ? renderMiniScoreTable(g) : ""}
+
+    <div>
+      <h1 class="display" style="font-size:2.2rem">
+        ${isBidding ? "Add <em>bets</em>." : "Add <em>wins</em>."}
+      </h1>
+      <p class="subtle" style="margin-top:10px">
+        ${isTeamMode
+          ? (isBidding
+              ? `Add one bet for each team.`
+              : `Add wins for each team. Total must be ${r}.`)
+          : (isBidding
+              ? `Add each player bet.`
+              : `Add each player wins. Total must be ${r}.`)}
+      </p>
+    </div>
+
+    <div class="row" style="gap:10px;flex-wrap:wrap">
+      ${isBidding ? `
+        <span class="totalbadge">Total bets: <span class="mono">${bidTotal}</span></span>
+
+      ` : `
+        <span class="totalbadge ${trickTotal===r?'ok':'warn'}">Total wins: <span class="mono">${trickTotal} / ${r}</span></span>
+        ${bidWarn ? `<span class="totalbadge warn">${bidWarn}</span>` : ""}
+      `}
+    </div>
+
+    <div class="stack-sm">
+      ${roundRows.map(row => {
+        const totalStr = row.total > 0 ? `+${row.total}` : `${row.total}`;
+        const teamCls = row.paletteIdx !== null ? `team-${row.paletteIdx}` : "";
+        const memberNames = row.members ? row.members.map(m => escape(m.name)).join(" + ") : "";
+        const currentValue = isBidding ? row.bid : row.trick;
+        const decAction = row.kind === "team" ? (isBidding ? "team-bid-dec" : "team-trick-dec") : (isBidding ? "bid-dec" : "trick-dec");
+        const incAction = row.kind === "team" ? (isBidding ? "team-bid-inc" : "team-trick-inc") : (isBidding ? "bid-inc" : "trick-inc");
+        const dataAttr = row.kind === "team" ? `data-tid="${row.id}"` : `data-pid="${row.id}"`;
+        return `
+        <div class="prow ${teamCls} ${row.kind === 'team' ? 'team-round-row' : ''}">
+          <div class="info">
+            <span class="nm">${escape(row.name)}</span>
+            ${row.kind === 'team' ? `<div class="team-members-line">${memberNames}</div>` : ""}
+            ${!isBidding ? `<span class="sub">
+              bet <span class="gold">${row.bid}</span>
+            </span>` : ""}
+          </div>
+          <div class="stepper stepper-sm">
+            <button data-action="${decAction}" ${dataAttr} ${currentValue<=0?'disabled':''}>−</button>
+            <span class="val">${currentValue}</span>
+            <button data-action="${incAction}" ${dataAttr} ${currentValue>=r?'disabled':''}>+</button>
+          </div>
+        </div>`;
+      }).join("")}
+    </div>
+
+    <div class="btn-row">
+      ${r > 1 && isBidding && g.rounds.length > 0 ? `<button class="btn btn-ghost" data-action="undo-round">Undo last round</button>` : ""}
+      <button class="btn btn-primary"
+        data-action="${isBidding?'confirm-bids':'confirm-tricks'}"
+        ${!isBidding && trickTotal !== r ? 'disabled' : ''}>
+        ${isBidding ? `Save bets →` : `Save round ${r}`}
+      </button>
+    </div>
+
+    ${g.rounds.length > 0 ? renderRoundRecap(g, g.rounds[g.rounds.length - 1]) : ""}
+
+    ${g.rounds.length > 0 ? `
+      <div class="panel">
+        <div class="row between" style="margin-bottom:14px">
+          <h3 class="label">Standings</h3>
+          <button class="iconbtn" style="width:auto;padding:4px 10px;border-radius:8px;font-size:0.78rem" data-action="show-history-table">Full board</button>
+        </div>
+        <div class="stack-sm">
+          ${rkRows.slice(0, 5).map((rr, i) => `
+            <div class="row between" style="padding:4px 0">
+              <div class="row" style="gap:10px">
+                <span class="score-pos" style="width:22px">${i+1}</span>
+                <span style="font-weight:500">
+                  ${i===0?'<span class="crown">♛</span>':''}${escape(rr.name)}
+                </span>
+                ${rr.members ? `<span class="subtle" style="font-size:0.78rem">${rr.members.map(escape).join(' & ')}</span>` : ""}
+              </div>
+              <span class="score-val ${rr.total>0?'pos':rr.total<0?'neg':''}">${rr.total>0?'+':''}${rr.total}</span>
+            </div>
+          `).join("")}
+        </div>
+      </div>
+    ` : ""}
+  </div>`;
+}
+
+function adjustTeamBid(teamId, delta){
+  const g = state.game;
+  const r = g.currentRound;
+  let v = getTeamPending(teamId, g.pendingBids) + delta;
+  v = Math.max(0, Math.min(r, v));
+  setTeamPending(teamId, g.pendingBids, v);
+  saveState(); render();
+}
+function adjustTeamTrick(teamId, delta){
+  const g = state.game;
+  const r = g.currentRound;
+  let v = getTeamPending(teamId, g.pendingTricks) + delta;
+  v = Math.max(0, Math.min(r, v));
+  setTeamPending(teamId, g.pendingTricks, v);
+  saveState(); render();
+}
+function adjustBid(pid, delta){
+  const r = state.game.currentRound;
+  let v = (state.game.pendingBids[pid] ?? 0) + delta;
+  v = Math.max(0, Math.min(r, v));
+  state.game.pendingBids[pid] = v;
+  saveState(); render();
+}
+function adjustTrick(pid, delta){
+  const r = state.game.currentRound;
+  let v = (state.game.pendingTricks[pid] ?? 0) + delta;
+  v = Math.max(0, Math.min(r, v));
+  state.game.pendingTricks[pid] = v;
+  saveState(); render();
+}
+function confirmBids(){
+  const totalBets = Object.values(state.game.pendingBids).reduce((a,b) => a + b, 0);
+  const roundNumber = state.game.currentRound;
+  state.game.phase = "tricks";
+  state.game.players.forEach(p => state.game.pendingTricks[p.id] = 0);
+  saveState();
+  render();
+  showBetTotalToast(totalBets, roundNumber);
+}
+function confirmTricks(){
+  const g = state.game;
+  const r = g.currentRound;
+  const trickTotal = Object.values(g.pendingTricks).reduce((a,b) => a+b, 0);
+  if(trickTotal !== r){ toast(`Total wins must be ${r}`); return; }
+  const bids = {...g.pendingBids};
+  const tricks = {...g.pendingTricks};
+  const scores = {};
+  const teamScores = {};
+
+  if(g.mode === "team"){
+    g.teams.forEach(team => {
+      const teamBid = team.playerIds.reduce((sum, pid) => sum + (bids[pid] || 0), 0);
+      const teamWon = team.playerIds.reduce((sum, pid) => sum + (tricks[pid] || 0), 0);
+      const teamScore = calcScore(teamBid, teamWon, state.rules);
+      teamScores[team.id] = teamScore;
+      team.playerIds.forEach(pid => { scores[pid] = teamScore; });
+    });
+  }else{
+    g.players.forEach(p => {
+      scores[p.id] = calcScore(bids[p.id] || 0, tricks[p.id] || 0, state.rules);
+    });
+  }
+
+  g.rounds.push({ roundNumber: r, bids, tricks, scores, ...(g.mode === "team" ? { teamScores } : {}) });
+  g.currentRound++;
+  g.phase = "bidding";
+  g.pendingBids = {};
+  g.pendingTricks = {};
+  if(g.currentRound <= 13){
+    g.players.forEach(p => { g.pendingBids[p.id] = 0; g.pendingTricks[p.id] = 0; });
+  }
+  if(g.currentRound > 13){
+    g.completedAt = Date.now();
+    state.history.unshift(deepClone(g));
+    if(state.history.length > 50) state.history.length = 50;
+    saveState();
+    setView("summary");
+    return;
+  }
+  saveState(); render();
+}
+function undoLastRound(){
+  const g = state.game;
+  if(g.rounds.length === 0){ toast("No round to undo"); return; }
+  const last = g.rounds.pop();
+  g.currentRound = last.roundNumber;
+  g.phase = "bidding";
+  g.pendingBids = {};
+  g.pendingTricks = {};
+  g.players.forEach(p => { g.pendingBids[p.id] = last.bids[p.id] || 0; g.pendingTricks[p.id] = 0; });
+  saveState(); render();
+  toast(`Round ${last.roundNumber} changed`);
+}
+
+
+function toggleScoreTable(){
+  if(!state.game || !state.game.rounds || state.game.rounds.length === 0){
+    toast("No rounds yet");
+    return;
+  }
+  state.showScoreTable = !state.showScoreTable;
+  render();
+}
+
+function toggleScoreBreak(roundNumber){
+  const key = String(roundNumber);
+  state.scoreBreaks = state.scoreBreaks || {};
+  state.scoreBreaks[key] = !state.scoreBreaks[key];
+  render();
+}
+
+function getScoreTableColumns(g){
+  if(g.mode === "team"){
+    return g.teams.map((t, idx) => ({
+      id: t.id,
+      name: t.name,
+      paletteIdx: t.paletteIdx ?? idx,
+      playerIds: t.playerIds
+    }));
+  }
+  return [...g.players].sort((a,b) => a.seatIndex - b.seatIndex).map(p => ({
+    id: p.id,
+    name: p.name,
+    playerIds: [p.id]
+  }));
+}
+
+function getScoreUntilRound(g, columns, roundNumber){
+  const totals = {};
+  columns.forEach(c => totals[c.id] = 0);
+
+  g.rounds
+    .filter(rd => rd.roundNumber <= roundNumber)
+    .forEach(rd => {
+      columns.forEach(c => {
+        const bet = c.playerIds.reduce((sum, pid) => sum + ((rd.bids && rd.bids[pid]) || 0), 0);
+        const won = c.playerIds.reduce((sum, pid) => sum + ((rd.tricks && rd.tricks[pid]) || 0), 0);
+        const score = g.mode === "team"
+          ? ((rd.teamScores && rd.teamScores[c.id] !== undefined) ? rd.teamScores[c.id] : calcScore(bet, won, state.rules))
+          : ((rd.scores && rd.scores[c.id]) || 0);
+        totals[c.id] += score;
+      });
+    });
+
+  return totals;
+}
+
+function renderScoreLine(g, columns, roundNumber, final=false){
+  const totals = getScoreUntilRound(g, columns, roundNumber);
+  return `
+    <div class="score-line ${final ? 'final-score-line' : ''}">
+      ${columns.map(c => {
+        const val = totals[c.id] || 0;
+        const cls = val > 0 ? "pos" : val < 0 ? "neg" : "";
+        return `<div class="score-box">${escape(c.name)} score: <span class="${cls}">${val > 0 ? "+" : ""}${val}</span></div>`;
+      }).join("")}
+    </div>
+  `;
+}
+
+function renderMiniScoreTable(g){
+  if(!g || !g.rounds || g.rounds.length === 0) return "";
+
+  const columns = getScoreTableColumns(g);
+  const breakRounds = [7, 10, 12];
+  const playedRounds = new Set(g.rounds.map(rd => rd.roundNumber));
+  const finalRound = Math.max(...g.rounds.map(rd => rd.roundNumber));
+
+  return `
+    <div class="panel mini-score-board">
+      <div class="row between">
+        <h3 class="label">Score table</h3>
+        <button class="iconbtn" style="width:auto;padding:4px 10px;border-radius:8px;font-size:0.78rem" data-action="toggle-score-table">Hide</button>
+      </div>
+      <div class="scroll-x">
+        <table class="mini-table">
+          <thead>
+            <tr>
+              <th>Round</th>
+              ${columns.map(c => `<th>
+                <span class="team-head-name">${escape(c.name)}</span>
+                <span class="betwon-head"><span>bets</span><span>won</span></span>
+              </th>`).join("")}
+            </tr>
+          </thead>
+          <tbody>
+            ${g.rounds.map(rd => {
+              const canBreak = breakRounds.includes(rd.roundNumber);
+              const isOpen = state.scoreBreaks && state.scoreBreaks[String(rd.roundNumber)];
+              const row = `
+                <tr>
+                  <td>
+                    <div class="round-cell">
+                      <span class="round-no">${rd.roundNumber}</span>
+                      ${canBreak ? `<button class="score-count-btn ${isOpen ? 'active' : ''}" data-action="toggle-score-break" data-round="${rd.roundNumber}">Score</button>` : ""}
+                    </div>
+                  </td>
+                  ${columns.map(c => {
+                    const bet = c.playerIds.reduce((sum, pid) => sum + ((rd.bids && rd.bids[pid]) || 0), 0);
+                    const won = c.playerIds.reduce((sum, pid) => sum + ((rd.tricks && rd.tricks[pid]) || 0), 0);
+                    const score = g.mode === "team"
+                      ? ((rd.teamScores && rd.teamScores[c.id] !== undefined) ? rd.teamScores[c.id] : calcScore(bet, won, state.rules))
+                      : ((rd.scores && rd.scores[c.id]) || 0);
+                    const scoreCls = score > 0 ? "pos" : score < 0 ? "neg" : "zero";
+                    return `<td>
+                      <div class="betwon-grid">
+                        <span>${bet}</span>
+                        <span class="won-with-score">
+                          <span>${won}</span>
+                          <span class="cell-score ${scoreCls}">(${score > 0 ? "+" : ""}${score})</span>
+                        </span>
+                      </div>
+                    </td>`;
+                  }).join("")}
+                </tr>`;
+              const breakRow = canBreak && isOpen
+                ? `<tr class="score-row"><td colspan="${columns.length + 1}">${renderScoreLine(g, columns, rd.roundNumber)}</td></tr>`
+                : "";
+              return row + breakRow;
+            }).join("")}
+            ${playedRounds.has(13) ? `
+              <tr class="score-row">
+                <td colspan="${columns.length + 1}">
+                  <div style="font-family:'Geist Mono',monospace;color:var(--gold-bright);font-size:0.72rem;letter-spacing:0.12em;text-transform:uppercase;margin-bottom:4px">Final scores</div>
+                  ${renderScoreLine(g, columns, 13, true)}
+                </td>
+              </tr>
+            ` : ""}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  `;
+}
+
+function showRoundHistoryModal(){
+  const g = state.game;
+  if(g.mode === "team"){
+    modal(`
+      <div class="row between" style="margin-bottom:14px">
+        <h2 class="section">Round scores</h2>
+        <button class="iconbtn" data-action="close-modal" style="width:32px;height:32px">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M18 6L6 18M6 6l12 12"/></svg>
+        </button>
+      </div>
+      <div class="stack-sm">
+        ${g.rounds.map(rd => renderRoundRecap(g, rd)).join("")}
+      </div>
+    `);
+    document.querySelectorAll("[data-action='close-modal']").forEach(b => b.addEventListener("click", closeModal));
+    return;
+  }
+
+  const seated = [...g.players].sort((a,b) => a.seatIndex - b.seatIndex);
+  const totals = seated.map(p => playerTotal(p.id));
+  modal(`
+    <div class="row between" style="margin-bottom:14px">
+      <h2 class="section">All rounds</h2>
+      <button class="iconbtn" data-action="close-modal" style="width:32px;height:32px">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M18 6L6 18M6 6l12 12"/></svg>
+      </button>
+    </div>
+    <div class="scroll-x">
+      <table class="htbl" style="min-width:${100 + seated.length*70}px">
+        <thead>
+          <tr>
+            <th style="text-align:left">R</th>
+            ${seated.map(p => `<th>${escape(p.name.slice(0,8))}</th>`).join("")}
+          </tr>
+        </thead>
+        <tbody>
+          ${g.rounds.map(rd => `
+            <tr>
+              <td class="nm" style="font-family:'Fraunces',serif;font-style:italic">${rd.roundNumber}</td>
+              ${seated.map(p => {
+                const b = rd.bids[p.id] ?? 0;
+                const t = rd.tricks[p.id] ?? 0;
+                const s = rd.scores[p.id] ?? 0;
+                const cls = s > 0 ? "pos" : s < 0 ? "neg" : "zero";
+                return `<td><div class="mono" style="font-size:0.78rem;color:var(--muted)">${b}/${t}</div><div class="rh-cell ${cls}" style="padding:2px 0;background:transparent">${s>0?'+':''}${s}</div></td>`;
+              }).join("")}
+            </tr>
+          `).join("")}
+          <tr class="win">
+            <td class="nm">TOT</td>
+            ${seated.map((p, i) => {
+              const t = totals[i];
+              return `<td class="score">${t>0?'+':''}${t}</td>`;
+            }).join("")}
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="subtle" style="font-size:0.78rem;margin-top:10px;text-align:center">bet / wins · points</p>
+  `);
+  document.querySelectorAll("[data-action='close-modal']").forEach(b => b.addEventListener("click", closeModal));
+}
+
+/* ════════════════════════════════════════════════════════
+   VIEW: SUMMARY
+   ════════════════════════════════════════════════════════ */
+function viewSummary(){
+  const g = state.game;
+  const rk = rankings();
+  const winner = rk[0];
+  const winnerMembers = winner.members ? winner.members.map(escape).join(' & ') : "";
+  return `
+  <div class="view-narrow stack-lg">
+    <div class="winner-celebration center-text">
+      <div class="round-badge" style="margin-bottom:16px">GAME OVER</div>
+      <h1 class="display" style="font-size:2.45rem">🏆 <em>${escape(winner.name)}</em><br/>wins!</h1>
+      ${winner.members ? `<p class="subtle" style="margin-top:8px;color:var(--cream)">${winnerMembers}</p>` : ""}
+      <div class="bigscore ${winner.total<0?'neg':''}" style="margin-top:16px">${winner.total>0?'+':''}${winner.total}</div>
+      ${renderReactionVideo({label:"Winner celebration", url:VIDEO_ASSETS.winnerCelebration}, "winner")}
+    </div>
+
+    <div class="panel felt">
+      <h3 class="label" style="color:var(--gold-bright);margin-bottom:14px">Final score</h3>
+      <div class="stack-sm">
+        ${rk.map((r, i) => `
+          <div class="row between" style="padding:8px 0;${i<rk.length-1?'border-bottom:1px solid rgba(212,182,117,0.1)':''}">
+            <div class="row">
+              <span class="score-pos" style="width:28px">${i===0?'🥇':i===1?'🥈':i===2?'🥉':i+1}</span>
+              <div>
+                <div style="font-weight:600">${i===0?'<span class="crown">♛</span>':''}${escape(r.name)}</div>
+                ${r.members ? `<div class="subtle" style="font-size:0.78rem">${r.members.map(escape).join(' & ')}</div>` : ""}
+              </div>
+            </div>
+            <span class="score-val ${r.total>0?'pos':r.total<0?'neg':''}">${r.total>0?'+':''}${r.total}</span>
+          </div>
+        `).join("")}
+      </div>
+    </div>
+
+    <button class="btn btn-ghost" data-action="show-history-table">All rounds</button>
+    <button class="btn btn-ghost" data-action="show-table">Show seats</button>
+    <div class="btn-row">
+      <button class="btn btn-ghost" data-action="save-and-exit">Home</button>
+      <button class="btn btn-primary" data-action="play-again">Play Again</button>
+    </div>
+  </div>`;
+}
+function saveAndExit(){ state.game = null; saveState(); setView("home"); }
+function playAgain(){ state.game = null; saveState(); startSetup(); }
+
+/* ════════════════════════════════════════════════════════
+   VIEW: HISTORY
+   ════════════════════════════════════════════════════════ */
+function viewHistory(){
+  return `
+  <div class="view-narrow stack-lg">
+    <div>
+      <div class="round-badge" style="margin-bottom:18px">PAST GAMES</div>
+      <h1 class="display">Old <em>games</em>.</h1>
+      <p class="subtle" style="margin-top:14px">${state.history.length} game${state.history.length===1?"":"s"} played.</p>
+    </div>
+
+    ${state.history.length === 0 ? `
+      <div class="empty">
+        <div style="font-size:2rem;margin-bottom:8px">♠ ♥ ♦ ♣</div>
+        <p>No games yet.</p>
+      </div>
+    ` : `
+      <div class="stack-sm">
+        ${state.history.map(g => {
+          const rk = computeRankings(g);
+          const winner = rk[0];
+          return `
+            <div class="list-item" data-action="open-history-game" data-id="${g.id}">
+              <div class="li-info">
+                <div class="li-title">${escape(winner.name)} <span class="gold mono" style="font-size:0.85rem">${winner.total>0?'+':''}${winner.total}</span></div>
+                <div class="li-sub">${fmtDate(g.completedAt)} · ${g.players.length}p · ${g.mode==="team"?"Teams":"Individual"}</div>
+              </div>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" style="width:18px;height:18px;color:var(--muted);stroke-width:1.6"><path d="M9 18l6-6-6-6"/></svg>
+            </div>
+          `;
+        }).join("")}
+      </div>
+      <button class="btn btn-danger" data-action="clear-history">Clear old games</button>
+    `}
+  </div>`;
+}
+function computeRankings(g){
+  if(g.mode === "individual"){
+    const arr = g.players.map(p => ({
+      id:p.id, name:p.name,
+      total: g.rounds.reduce((s,r) => s + (r.scores[p.id]||0), 0),
+    }));
+    arr.sort((a,b) => b.total - a.total);
+    return arr;
+  }else{
+    return g.teams.map((t, idx) => {
+      const members = t.playerIds.map(pid => g.players.find(p=>p.id===pid).name);
+      const total = g.rounds.reduce((sum, r) => {
+        if(r.teamScores && r.teamScores[t.id] !== undefined) return sum + r.teamScores[t.id];
+        const bid = t.playerIds.reduce((s, pid) => s + ((r.bids && r.bids[pid]) || 0), 0);
+        const won = t.playerIds.reduce((s, pid) => s + ((r.tricks && r.tricks[pid]) || 0), 0);
+        return sum + calcScore(bid, won, state.rules);
+      }, 0);
+      return { id:t.id, name:t.name, total, members, paletteIdx: t.paletteIdx ?? idx };
+    }).sort((a,b) => b.total - a.total);
+  }
+}
+function openHistoryGame(id){
+  const g = state.history.find(x => x.id === id);
+  if(!g) return;
+  const rk = computeRankings(g);
+  const seated = [...g.players].sort((a,b) => a.seatIndex - b.seatIndex);
+  const teamMode = g.mode === "team" && g.teams && g.teams.length;
+  const boardRows = teamMode ? g.teams.map((t, idx) => ({
+    id:t.id,
+    name:t.name,
+    members:t.playerIds.map(pid => g.players.find(p=>p.id===pid)).filter(Boolean),
+    paletteIdx:t.paletteIdx ?? idx,
+  })) : seated.map(p => ({ id:p.id, name:p.name, members:null, paletteIdx:null }));
+  modal(`
+    <div class="row between" style="margin-bottom:14px">
+      <div>
+        <h2 class="section">Game · ${fmtDate(g.completedAt)}</h2>
+        <p class="subtle" style="font-size:0.82rem">${g.players.length} players · ${g.mode==="team"?"Teams":"Individual"}</p>
+      </div>
+      <button class="iconbtn" data-action="close-modal" style="width:32px;height:32px">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M18 6L6 18M6 6l12 12"/></svg>
+      </button>
+    </div>
+    <div class="stack-sm" style="margin-bottom:16px">
+      ${rk.map((r, i) => `
+        <div class="row between" style="padding:4px 0">
+          <span>${i===0?'<span class="crown">♛</span>':''}<span style="font-weight:500">${escape(r.name)}</span>
+          ${r.members ? ` <span class="subtle" style="font-size:0.78rem">${r.members.map(escape).join(', ')}</span>` : ""}</span>
+          <span class="score-val ${r.total>0?'pos':r.total<0?'neg':''}" style="font-size:1.1rem">${r.total>0?'+':''}${r.total}</span>
+        </div>
+      `).join("")}
+    </div>
+    <div class="scroll-x">
+      <table class="htbl" style="min-width:${100 + boardRows.length*90}px">
+        <thead><tr><th style="text-align:left">R</th>${boardRows.map(row=>`<th>${escape(row.name.slice(0,8))}</th>`).join("")}</tr></thead>
+        <tbody>
+          ${g.rounds.map(rd => `
+            <tr>
+              <td class="nm" style="font-family:'Fraunces',serif;font-style:italic">${rd.roundNumber}</td>
+              ${boardRows.map(row => {
+                let bid, won, score;
+                if(teamMode){
+                  bid = row.members.reduce((sum,p)=>sum+((rd.bids && rd.bids[p.id])||0),0);
+                  won = row.members.reduce((sum,p)=>sum+((rd.tricks && rd.tricks[p.id])||0),0);
+                  score = rd.teamScores && rd.teamScores[row.id] !== undefined ? rd.teamScores[row.id] : calcScore(bid, won, state.rules);
+                }else{
+                  bid = rd.bids[row.id] ?? 0;
+                  won = rd.tricks[row.id] ?? 0;
+                  score = rd.scores[row.id] ?? 0;
+                }
+                const cls = score > 0 ? "pos" : score < 0 ? "neg" : "zero";
+                return `<td><div class="mono" style="font-size:0.72rem;color:var(--muted)">${bid}/${won}</div><div class="rh-cell ${cls}" style="background:transparent">${score>0?'+':''}${score}</div></td>`;
+              }).join("")}
+            </tr>
+          `).join("")}
+        </tbody>
+      </table>
+    </div>
+    <p class="subtle" style="font-size:0.78rem;margin-top:10px;text-align:center">bet / wins · points</p>
+    <button class="btn btn-danger" style="margin-top:16px" data-action="delete-history-game" data-id="${g.id}">Delete this game</button>
+  `);
+  document.querySelectorAll("[data-action='close-modal']").forEach(b => b.addEventListener("click", closeModal));
+  document.querySelectorAll("[data-action='delete-history-game']").forEach(b => b.addEventListener("click", () => deleteHistoryGame(b.dataset.id)));
+}
+function deleteHistoryGame(id){
+  state.history = state.history.filter(g => g.id !== id);
+  saveState(); closeModal(); render(); toast("Game deleted");
+}
+function confirmClearHistory(){
+  modal(`
+    <h2 class="section" style="margin-bottom:10px">Clear all history?</h2>
+    <p class="subtle">This will delete all ${state.history.length} saved games. This cannot be undone.</p>
+    <div class="btn-row" style="margin-top:20px">
+      <button class="btn btn-ghost" data-action="close-modal">Cancel</button>
+      <button class="btn btn-danger" id="confirm-clear-history">Clear all</button>
+    </div>
+  `);
+  document.querySelectorAll("[data-action='close-modal']").forEach(b => b.addEventListener("click", closeModal));
+  document.getElementById("confirm-clear-history").addEventListener("click", () => {
+    state.history = []; saveState(); closeModal(); render(); toast("Old games cleared");
+  });
+}
+
+/* ════════════════════════════════════════════════════════
+   VIEW: SETTINGS
+   ════════════════════════════════════════════════════════ */
+function viewSettings(){
+  const r = state.rules;
+  return `
+  <div class="view-narrow stack-lg">
+    <div>
+      <div class="round-badge" style="margin-bottom:18px">SETTINGS</div>
+      <h1 class="display">House <em>rules</em>.</h1>
+      <p class="subtle" style="margin-top:14px">Change points here.</p>
+    </div>
+
+    <div class="panel">
+      <div class="setting-row">
+        <div class="lbl">
+          <span class="t">Points per win</span>
+          <span class="d">When bet is correct</span>
+        </div>
+        <div class="stepper stepper-sm" style="width:130px">
+          <button id="ppt-dec">−</button>
+          <span class="val" id="ppt-val">${r.pointsPerTrick}</span>
+          <button id="ppt-inc">+</button>
+        </div>
+      </div>
+      <div class="setting-row">
+        <div class="lbl">
+          <span class="t">Missed win penalty</span>
+          <span class="d">When bet is too high</span>
+        </div>
+        <div class="stepper stepper-sm" style="width:130px">
+          <button id="ppm-dec">−</button>
+          <span class="val" id="ppm-val">${r.penaltyPerMissed}</span>
+          <button id="ppm-inc">+</button>
+        </div>
+      </div>
+      <div class="setting-row">
+        <div class="lbl">
+          <span class="t">Zero bet penalty</span>
+          <span class="d">For each win after betting 0</span>
+        </div>
+        <div class="stepper stepper-sm" style="width:130px">
+          <button id="nil-dec">−</button>
+          <span class="val" id="nil-val">${r.nilBidPenaltyPerTrick}</span>
+          <button id="nil-inc">+</button>
+        </div>
+      </div>
+      <div class="setting-row">
+        <div class="lbl">
+          <span class="t">Zero bet bonus</span>
+          <span class="d">Bet 0 and win 0</span>
+        </div>
+        <div class="stepper stepper-sm" style="width:130px">
+          <button id="nilb-dec">−</button>
+          <span class="val" id="nilb-val">${r.nilBidSuccessBonus}</span>
+          <button id="nilb-inc">+</button>
+        </div>
+      </div>
+      <div class="setting-row">
+        <div class="lbl">
+          <span class="t">Count extra wins</span>
+          <span class="d">On: count all wins. Off: count bet only.</span>
+        </div>
+        <button id="ov-toggle" class="chip ${r.rewardOvertricks?'active':''}">${r.rewardOvertricks?'ON':'OFF'}</button>
+      </div>
+    </div>
+
+    <div class="panel panel-tight">
+      <h3 class="label" style="margin-bottom:10px">Examples</h3>
+      <div class="stack-sm" style="font-size:0.88rem;font-family:'Geist Mono',monospace">
+        <div class="row between"><span style="color:var(--muted)">Bet 2, won 2</span><span class="gold">${formatScore(calcScore(2,2,r))}</span></div>
+        <div class="row between"><span style="color:var(--muted)">Bet 2, won 1</span><span class="${calcScore(2,1,r)<0?'':'gold'}" style="${calcScore(2,1,r)<0?'color:var(--red)':''}">${formatScore(calcScore(2,1,r))}</span></div>
+        <div class="row between"><span style="color:var(--muted)">Bet 3, won 1</span><span style="color:var(--red)">${formatScore(calcScore(3,1,r))}</span></div>
+        <div class="row between"><span style="color:var(--muted)">Bet 2, won 4</span><span class="gold">${formatScore(calcScore(2,4,r))}</span></div>
+        <div class="row between"><span style="color:var(--muted)">Bet 0, won 0</span><span class="${calcScore(0,0,r)<0?'':'gold'}" style="${calcScore(0,0,r)<0?'color:var(--red)':''}">${formatScore(calcScore(0,0,r))}</span></div>
+        <div class="row between"><span style="color:var(--muted)">Bet 0, won 1</span><span style="color:var(--red)">${formatScore(calcScore(0,1,r))}</span></div>
+      </div>
+    </div>
+
+    <button class="btn btn-ghost" data-action="reset-rules">Restore defaults</button>
+    <button class="btn btn-ghost" data-action="view-rules">How scoring works</button>
+  </div>`;
+}
+function formatScore(n){ return n>0?`+${n}`: `${n}`; }
+function bindSettingsHandlers(){
+  const stepper = (incId, decId, valId, key, min=0, max=99) => {
+    const inc = document.getElementById(incId);
+    const dec = document.getElementById(decId);
+    if(!inc || !dec) return;
+    inc.addEventListener("click", () => {
+      state.rules[key] = Math.min(max, (state.rules[key] || 0) + 1);
+      saveState(); render();
+    });
+    dec.addEventListener("click", () => {
+      state.rules[key] = Math.max(min, (state.rules[key] || 0) - 1);
+      saveState(); render();
+    });
+  };
+  stepper("ppt-inc","ppt-dec","ppt-val","pointsPerTrick", 1, 50);
+  stepper("ppm-inc","ppm-dec","ppm-val","penaltyPerMissed Bets", 0, 50);
+  stepper("nil-inc","nil-dec","nil-val","nilBidPenaltyPerTrick", 0, 50);
+  stepper("nilb-inc","nilb-dec","nilb-val","nilBidSuccessBonus", 0, 100);
+  const ov = document.getElementById("ov-toggle");
+  if(ov) ov.addEventListener("click", () => {
+    state.rules.rewardOvertricks = !state.rules.rewardOvertricks;
+    saveState(); render();
+  });
+}
+function resetRules(){
+  state.rules = { ...DEFAULT_RULES };
+  saveState(); render(); toast("Scoring reset");
+}
+
+/* ════════════════════════════════════════════════════════
+   VIEW: RULES EXPLAINER
+   ════════════════════════════════════════════════════════ */
+function viewRules(){
+  const r = state.rules;
+  return `
+  <div class="view-narrow stack-lg">
+    <div>
+      <div class="round-badge" style="margin-bottom:18px">RULES</div>
+      <h1 class="display">Scoring <em>help</em>.</h1>
+    </div>
+
+    <div class="panel">
+      <h3 class="label" style="margin-bottom:14px">Rounds &amp; bets</h3>
+      <p class="subtle" style="line-height:1.6">
+        There are <span class="gold">13 rounds</span>. Round 1 gives 1 card. Round 2 gives 2 cards, and so on.
+      </p>
+    </div>
+
+    <div class="panel">
+      <h3 class="label" style="margin-bottom:14px">Seats &amp; teams</h3>
+      <p class="subtle" style="line-height:1.6;margin-bottom:10px">
+        Everyone picks a card first. That makes the seating order.
+      </p>
+      <p class="subtle" style="line-height:1.6;margin-bottom:10px">
+        Same card? Those players pick again.
+      </p>
+      <p class="subtle" style="line-height:1.6">
+        In <span class="gold">team mode</span>, teams are made from the seats.
+      </p>
+    </div>
+
+    <div class="panel">
+      <h3 class="label" style="margin-bottom:14px">Score</h3>
+      <div class="stack-sm">
+        <div class="row between">
+          <span class="subtle">Bet is correct</span>
+          <span class="gold mono">+${r.pointsPerTrick} × wins</span>
+        </div>
+        <div class="row between">
+          <span class="subtle">Bet is too high</span>
+          <span class="mono"><span class="gold">+${r.pointsPerTrick}×won</span> <span style="color:var(--red)">− ${r.penaltyPerMissed}×missed</span></span>
+        </div>
+        <div class="row between">
+          <span class="subtle">Bet 0, win 0</span>
+          <span class="gold mono">${r.nilBidSuccessBonus>0?'+':''}${r.nilBidSuccessBonus}</span>
+        </div>
+        <div class="row between">
+          <span class="subtle">Bet 0, got wins</span>
+          <span class="mono" style="color:var(--red)">−${r.nilBidPenaltyPerTrick} × wins</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h3 class="label" style="margin-bottom:14px">Examples</h3>
+      <div class="stack-sm" style="font-size:0.9rem;line-height:1.5">
+        <div class="row between"><span><span class="mono" style="color:var(--muted)">bet 2 · won 2</span></span><span class="score-val pos" style="font-size:1.05rem">${formatScore(calcScore(2,2,r))}</span></div>
+        <div class="row between"><span><span class="mono" style="color:var(--muted)">bet 2 · won 1</span></span><span class="score-val ${calcScore(2,1,r)<0?'neg':'pos'}" style="font-size:1.05rem">${formatScore(calcScore(2,1,r))}</span></div>
+        <div class="row between"><span><span class="mono" style="color:var(--muted)">bet 3 · won 1</span></span><span class="score-val neg" style="font-size:1.05rem">${formatScore(calcScore(3,1,r))}</span></div>
+        <div class="row between"><span><span class="mono" style="color:var(--muted)">bet 0 · won 1</span></span><span class="score-val neg" style="font-size:1.05rem">${formatScore(calcScore(0,1,r))}</span></div>
+      </div>
+    </div>
+
+    <button class="btn btn-ghost" data-action="goto-settings">Change scoring</button>
+  </div>`;
+}
+
+function confirmStop(){
+  modal(`
+    <h2 class="section" style="margin-bottom:10px">Stop this game?</h2>
+    <p class="subtle">This game will be removed.</p>
+    <div class="btn-row" style="margin-top:20px">
+      <button class="btn btn-ghost" data-action="close-modal">Cancel</button>
+      <button class="btn btn-danger" id="confirm-abandon">Stop</button>
+    </div>
+  `);
+  document.querySelectorAll("[data-action='close-modal']").forEach(b => b.addEventListener("click", closeModal));
+  document.getElementById("confirm-abandon").addEventListener("click", () => {
+    state.game = null; saveState(); closeModal(); render(); toast("Game stopped");
+  });
+}
+
+/* ── Init ───────────────────────────────────────────────── */
+loadState();
+render();
+</script>
+</body>
+</html>
