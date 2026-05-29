@@ -951,6 +951,37 @@ h3.label{
   .seat-mark{width:64px}
   .seat-mark .seat-name-pill{font-size:0.72rem;padding:3px 8px;max-width:84px}
 }
+#splash-screen{
+  position:fixed;
+  inset:0;
+  z-index:99999;
+  background:#0a1410;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  transition:opacity 0.6s ease, visibility 0.6s ease;
+}
+
+/* all your splash CSS here */
+
+@keyframes splashZoom{
+  0%{
+    transform:scale(0.75);
+    opacity:0;
+  }
+  25%{
+    transform:scale(1);
+    opacity:1;
+  }
+  75%{
+    transform:scale(1.08);
+    opacity:1;
+  }
+  100%{
+    transform:scale(1.15);
+    opacity:0;
+  }
+}
 </style>
 </head>
 <body>
